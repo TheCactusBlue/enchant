@@ -1,6 +1,6 @@
 use iocraft::prelude::*;
 
-use crate::agent::{Message, Session};
+use crate::agent::Session;
 use crate::components::{InputBox, ThinkingIndicator};
 
 pub mod agent;
@@ -31,7 +31,7 @@ fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
             on_change: move |new_value| input.set(new_value),
             on_submit: move |value| {
                 let mut sess = session.write();
-                sess.messages.push(Message::User(value));
+                sess.message(value).unwrap();
                 input.set("".to_string());
             },
         )

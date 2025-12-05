@@ -1,22 +1,17 @@
 pub mod tools;
 
-use crate::{agent::tools::get_default_tools, error::Error};
+use crate::{
+    agent::tools::{get_default_tools, tool},
+    error::Error,
+};
 use genai::{
     Client,
     chat::{ChatMessage, ChatRequest},
 };
 
 #[derive(Clone, Debug)]
-pub enum Message {
-    User(String),
-    Agent(String),
-    Tool(String),
-    Error(String),
-}
-
-#[derive(Clone, Debug)]
 pub struct Session {
-    pub messages: Vec<Message>,
+    pub messages: Vec<ChatMessage>,
 }
 
 impl Session {
@@ -26,22 +21,23 @@ impl Session {
         }
     }
 
-    pub fn build_chat(&self) -> Vec<ChatMessage> {
-        self.messages
-            .iter()
-            .map(|m| match m {
-                Message::User(msg) => ChatMessage::user(msg),
-                _ => ChatMessage::system("Unknown"),
-            })
-            .collect()
+    pub async fn think(&mut self) -> Result<(), Error> {
+        let toolset = get_default_tools();
+
+        let request = ChatRequest::new(self.messages.clone()).with_tools(toolset.list_tools());
+
+        let response = Client::default()
+            .exec_chat("claude-haiku-4-5", request, None)
+            .await?;
+
+        let calls = response.tool_calls();
+        self.messages.push(ChatMessage::assistant(response.content));
+
+        Ok(())
     }
 
-    pub async fn think(&mut self) -> Result<(), Error> {
-        let chatreq = ChatRequest::new(self.build_chat()).with_tools(get_default_tools());
-
-        let chat_response = Client::default()
-            .exec_chat("claude-haiku-4-5", chatreq, None)
-            .await?;
+    pub fn message(&mut self, message: String) -> Result<(), Error> {
+        self.messages.push(ChatMessage::user(message));
 
         Ok(())
     }
