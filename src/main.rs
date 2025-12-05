@@ -1,6 +1,7 @@
 use iocraft::prelude::*;
 
 use crate::agent::{Message, Session};
+use crate::components::InputBox;
 
 pub mod agent;
 pub mod components;
@@ -30,22 +31,10 @@ fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
             }
         }))
 
-        View (
-            border_style: BorderStyle::Single,
-            padding_left: 1,
-            padding_right: 1,
-            min_width: 80,
-            min_height: 5,
-            max_height: 40,
-            border_color: Color::Rgb { r: 181, g: 128, b: 255 }
-        ) {
-            TextInput(
-                has_focus: true,
-                value: input.to_string(),
-                on_change: move |new_value| input.set(new_value),
-                multiline: true,
-            )
-        }
+        InputBox(
+            value: input.to_string(),
+            on_change: move |new_value| input.set(new_value),
+        )
       }
     }
 }
