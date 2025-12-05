@@ -5,6 +5,7 @@ use crate::components::{InputBox, ThinkingIndicator};
 
 pub mod agent;
 pub mod components;
+pub mod error;
 
 #[component]
 fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
@@ -13,13 +14,17 @@ fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
 
     element! {
       View (flex_direction: FlexDirection::Column) {
-        #(session.read().messages.iter().map(|m| {
-            element! {
-                Text (content: format!("{:?}", m))
-            }
-        }))
+        View(flex_direction: FlexDirection::Column) {
+            #(session.read().messages.iter().map(|m| {
+                element! {
+                    Text (content: format!("{:?}", m))
+                }
+            }))
+        }
 
-        ThinkingIndicator()
+        View(margin_top: 1) {
+            ThinkingIndicator()
+        }
 
         InputBox(
             value: input.to_string(),

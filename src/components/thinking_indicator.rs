@@ -10,7 +10,24 @@ const ENCHANTING_TEXT: &'static str =
 
 #[component]
 pub fn ThinkingIndicator(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
-    let mut indicator = hooks.use_state(|| " ".to_string());
+    let mut indicator = hooks.use_state(|| {
+        ENCHANTING_TEXT
+            .chars()
+            .choose(&mut rand::rng())
+            .unwrap_or(' ')
+    });
+
+    hooks.use_future(async move {
+        loop {
+            tokio::time::sleep(Duration::from_millis(200)).await;
+            indicator.set(
+                ENCHANTING_TEXT
+                    .chars()
+                    .choose(&mut rand::rng())
+                    .unwrap_or(' '),
+            );
+        }
+    });
 
     element! {
         Text (content: format!("{} Enchanting...", indicator), color: COLOR_PRIMARY)
