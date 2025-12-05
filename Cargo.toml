@@ -1,0 +1,8 @@
+[package]
+name = "enchant"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+iocraft = "0.7.16"
+ratatui = "0.29.0"
