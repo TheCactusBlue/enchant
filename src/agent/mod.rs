@@ -1,7 +1,7 @@
 pub mod tools;
 
 use crate::{
-    agent::tools::{get_default_tools, tool},
+    agent::tools::{get_default_tools, tool::Toolset},
     error::Error,
 };
 use genai::{
@@ -9,22 +9,21 @@ use genai::{
     chat::{ChatMessage, ChatRequest},
 };
 
-#[derive(Clone, Debug)]
 pub struct Session {
     pub messages: Vec<ChatMessage>,
+    pub tools: Toolset,
 }
 
 impl Session {
     pub fn new() -> Self {
         Self {
             messages: Vec::new(),
+            tools: get_default_tools(),
         }
     }
 
     pub async fn think(&mut self) -> Result<(), Error> {
-        let toolset = get_default_tools();
-
-        let request = ChatRequest::new(self.messages.clone()).with_tools(toolset.list_tools());
+        let request = ChatRequest::new(self.messages.clone()).with_tools(self.tools.list_tools());
 
         let response = Client::default()
             .exec_chat("claude-haiku-4-5", request, None)

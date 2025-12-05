@@ -62,11 +62,11 @@ impl<T: Tool + Sync> WrappedTool for T {
 
 pub struct Toolset {
     order: Vec<AITool>, // order of tools matter for LLM performance
-    tools: HashMap<String, Box<dyn WrappedTool>>,
+    tools: HashMap<String, Box<dyn WrappedTool + Send + Sync + 'static>>,
 }
 
 impl Toolset {
-    pub fn new(tools: Vec<Box<dyn WrappedTool>>) -> Self {
+    pub fn new(tools: Vec<Box<dyn WrappedTool + Send + Sync + 'static>>) -> Self {
         let order: Vec<_> = tools.iter().map(|x| x.to_tool()).collect();
         let tools = tools.into_iter().map(|t| (t.to_tool().name, t)).collect();
         Self { order, tools }

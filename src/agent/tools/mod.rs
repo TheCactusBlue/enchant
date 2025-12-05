@@ -1,10 +1,7 @@
 use genai::chat::Tool as AITool;
 use schemars::schema_for;
 
-use crate::agent::tools::{
-    grep::Grep,
-    tool::{Tool, Toolset},
-};
+use crate::agent::tools::tool::{Tool, Toolset};
 
 pub mod grep;
 pub mod tool;
