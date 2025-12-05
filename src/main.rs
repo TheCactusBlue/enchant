@@ -1,7 +1,7 @@
 use iocraft::prelude::*;
 
 use crate::agent::{Message, Session};
-use crate::components::InputBox;
+use crate::components::{InputBox, ThinkingIndicator};
 
 pub mod agent;
 pub mod components;
@@ -11,18 +11,6 @@ fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let mut input = hooks.use_state(|| "".to_string());
     let mut session = hooks.use_state(|| Session::new());
 
-    hooks.use_terminal_events({
-        move |event| match event {
-            TerminalEvent::Key(KeyEvent { kind, code, .. })
-                if kind != KeyEventKind::Release && code == KeyCode::Enter =>
-            {
-                let mut sess = session.write();
-                sess.messages.push(Message::User(input.to_string()));
-                input.set("".to_string());
-            }
-            _ => {}
-        }
-    });
     element! {
       View (flex_direction: FlexDirection::Column) {
         #(session.read().messages.iter().map(|m| {
@@ -31,9 +19,16 @@ fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
             }
         }))
 
+        ThinkingIndicator()
+
         InputBox(
             value: input.to_string(),
             on_change: move |new_value| input.set(new_value),
+            on_submit: move |value| {
+                let mut sess = session.write();
+                sess.messages.push(Message::User(value));
+                input.set("".to_string());
+            },
         )
       }
     }
