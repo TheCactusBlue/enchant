@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::format};
 
 use async_trait::async_trait;
 use genai::chat::Tool as AITool;
