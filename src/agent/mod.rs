@@ -7,6 +7,7 @@ use crate::{
     agent::{
         prompt::build_system_prompt,
         tools::{
+            bash::Bash,
             edit::Edit,
             glob::Glob,
             read::Read,
@@ -61,6 +62,7 @@ impl Session {
                 Box::new(Glob),
                 Box::new(Edit),
                 Box::new(Write),
+                Box::new(Bash),
             ])),
             pending_calls: vec![],
             approved_calls: vec![],
