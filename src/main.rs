@@ -1,4 +1,3 @@
-use dotenvy::dotenv;
 use iocraft::prelude::*;
 
 use crate::agent::Session;
