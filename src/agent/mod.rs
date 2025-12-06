@@ -2,7 +2,10 @@ pub mod tools;
 
 use std::sync::Arc;
 
-use crate::{agent::tools::tool::Toolset, error::Error};
+use crate::{
+    agent::tools::{read::Read, tool::Toolset},
+    error::Error,
+};
 use genai::{
     Client, ModelIden,
     chat::{ChatMessage, ChatRequest, ToolResponse},
@@ -19,7 +22,7 @@ impl Session {
     pub fn new() -> Self {
         Self {
             messages: vec![ChatMessage::system(include_str!("../../prompts/BASE.md"))],
-            tools: Arc::new(Toolset::new(vec![])),
+            tools: Arc::new(Toolset::new(vec![Box::new(Read)])),
         }
     }
 
