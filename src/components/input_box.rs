@@ -1,5 +1,6 @@
 use iocraft::prelude::*;
 
+use crate::components::enhanced_input::EnhancedInput;
 use crate::components::COLOR_PRIMARY;
 
 #[derive(Default, Props)]
@@ -11,21 +12,7 @@ pub struct InputBoxProps {
 
 #[component]
 pub fn InputBox(mut hooks: Hooks, props: &mut InputBoxProps) -> impl Into<AnyElement<'static>> {
-    let mut on_submit = props.on_submit.take();
-    let value = props.value.clone();
-
     let (w, _) = hooks.use_terminal_size();
-
-    hooks.use_terminal_events({
-        move |event| match event {
-            TerminalEvent::Key(KeyEvent { kind, code, .. })
-                if kind != KeyEventKind::Release && code == KeyCode::Enter =>
-            {
-                (on_submit)(value.clone());
-            }
-            _ => {}
-        }
-    });
 
     element! {
         View (
@@ -37,10 +24,11 @@ pub fn InputBox(mut hooks: Hooks, props: &mut InputBoxProps) -> impl Into<AnyEle
             max_height: 40,
             border_color: COLOR_PRIMARY
         ) {
-            TextInput(
+            EnhancedInput(
                 has_focus: true,
                 value: props.value.clone(),
                 on_change: props.on_change.take(),
+                on_submit: props.on_submit.take(),
                 multiline: true,
             )
         }
