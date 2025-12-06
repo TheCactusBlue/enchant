@@ -1,4 +1,4 @@
-use crate::agent::tools::tool::ToolError;
+use crate::agent::tools::tool_error::ToolError;
 
 #[derive(Debug)]
 pub enum Error {

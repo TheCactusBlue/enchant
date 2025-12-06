@@ -1,10 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::agent::tools::{
-    Tool,
-    tool::{ToolError, ToolInfo},
-};
+use crate::agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError};
 
 pub struct Read;
 
@@ -21,7 +18,7 @@ impl Tool for Read {
     }
 
     async fn execute(input: Self::Input) -> Result<String, ToolError> {
-        let res = tokio::fs::read_to_string(input.path).await.unwrap();
+        let res = tokio::fs::read_to_string(input.path).await?;
         Ok(res)
     }
 }

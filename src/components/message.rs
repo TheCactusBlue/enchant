@@ -47,7 +47,7 @@ pub fn Message(mut _hooks: Hooks, props: &MessageProps) -> impl Into<AnyElement<
                 let tool_calls = message.content.tool_calls();
                 let text_content = message.content.clone().into_joined_texts().unwrap_or("".to_string());
                 Some(element! {
-                    View(flex_direction: FlexDirection::Column) {
+                    View(flex_direction: FlexDirection::Column, max_width: 80) {
                         #(tool_calls.iter().map(|tc| {
                             element! {
                                 View(border_style: MESSAGE_LINE, padding_left: 1, border_color: COLOR_TOOL) {

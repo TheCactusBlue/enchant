@@ -1,10 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::agent::tools::{
-    Tool,
-    tool::{ToolError, ToolInfo},
-};
+use crate::agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError};
 
 pub struct Edit;
 
@@ -23,11 +20,9 @@ impl Tool for Edit {
     }
 
     async fn execute(input: Self::Input) -> Result<String, ToolError> {
-        let old_file = tokio::fs::read_to_string(input.path.clone()).await.unwrap();
+        let old_file = tokio::fs::read_to_string(input.path.clone()).await?;
         let new_file = old_file.replacen(&input.old_string, &input.new_string, 1);
-        tokio::fs::write(input.path, new_file.clone())
-            .await
-            .unwrap();
+        tokio::fs::write(input.path, new_file.clone()).await?;
         Ok(new_file)
     }
 }

@@ -6,6 +6,8 @@ use schemars::{JsonSchema, schema_for};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
 
+use crate::agent::tools::tool_error::ToolError;
+
 pub trait Tool {
     type Input: Serialize + DeserializeOwned + JsonSchema;
 
@@ -18,11 +20,6 @@ pub struct ToolInfo {
     pub name: String,
     pub description: Option<String>,
     pub config: Option<serde_json::Value>,
-}
-
-#[derive(Debug, Clone)]
-pub struct ToolError {
-    pub description: String,
 }
 
 impl ToolInfo {

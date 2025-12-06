@@ -1,10 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::agent::tools::{
-    Tool,
-    tool::{ToolError, ToolInfo},
-};
+use crate::agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError};
 
 pub struct Glob;
 
@@ -24,7 +21,9 @@ impl Tool for Glob {
     async fn execute(input: Self::Input) -> Result<String, ToolError> {
         // TODO: Port glob to use async
         let v: Vec<_> = glob::glob(&input.pattern)
-            .unwrap()
+            .map_err(|x| ToolError::Error {
+                message: x.msg.to_string(),
+            })?
             .filter_map(|x| x.ok())
             .map(|x| x.display().to_string())
             .collect();

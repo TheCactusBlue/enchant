@@ -1,10 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::agent::tools::{
-    Tool,
-    tool::{ToolError, ToolInfo},
-};
+use crate::agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError};
 
 pub struct Grep;
 
