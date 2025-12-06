@@ -1,9 +1,13 @@
+pub mod prompt;
 pub mod tools;
 
 use std::sync::Arc;
 
 use crate::{
-    agent::tools::{read::Read, tool::Toolset},
+    agent::{
+        prompt::build_system_prompt,
+        tools::{read::Read, tool::Toolset},
+    },
     error::Error,
 };
 use genai::{
@@ -21,42 +25,54 @@ pub struct Session {
 impl Session {
     pub fn new() -> Self {
         Self {
-            messages: vec![ChatMessage::system(include_str!("../../prompts/BASE.md"))],
+            messages: vec![ChatMessage::system(build_system_prompt())],
             tools: Arc::new(Toolset::new(vec![Box::new(Read)])),
         }
     }
 
     pub async fn think(&mut self) -> Result<(), Error> {
-        let request = ChatRequest::new(self.messages.clone()).with_tools(self.tools.list_tools());
-
-        let response = Client::builder()
+        let client = Client::builder()
             .with_auth_resolver(auth_resolver())
-            .build()
-            .exec_chat("claude-haiku-4-5", request, None)
-            .await?;
+            .build();
 
-        let calls = response.tool_calls();
-        let tool_messages: Vec<ChatMessage> =
-            futures::future::try_join_all(calls.iter().map(async |call| {
-                let resp = self
-                    .tools
-                    .call(call.fn_name.clone(), call.fn_arguments.clone())
-                    .await?;
-                Ok::<_, Error>(ChatMessage::from(ToolResponse::new(
-                    call.call_id.clone(),
-                    resp,
-                )))
-            }))
-            .await?;
+        loop {
+            let request =
+                ChatRequest::new(self.messages.clone()).with_tools(self.tools.list_tools());
 
-        self.messages.push(ChatMessage::assistant(response.content));
-        self.messages.extend(tool_messages);
+            let response = client.exec_chat("claude-haiku-4-5", request, None).await?;
+
+            let tool_calls = response.tool_calls();
+
+            // If no tool calls, we're done - add the final response and exit
+            if tool_calls.is_empty() {
+                self.messages.push(ChatMessage::assistant(response.content));
+                break;
+            }
+
+            // Execute all tool calls and collect responses
+            let tool_responses: Vec<ToolResponse> =
+                futures::future::try_join_all(tool_calls.iter().map(async |call| {
+                    let resp = self
+                        .tools
+                        .call(call.fn_name.clone(), call.fn_arguments.clone())
+                        .await?;
+                    Ok::<_, Error>(ToolResponse::new(call.call_id.clone(), resp))
+                }))
+                .await?;
+
+            // Add both the tool calls from the model and our tool responses to the chat history
+            let tool_calls = response.into_tool_calls();
+            self.messages.push(ChatMessage::from(tool_calls));
+            for tool_response in tool_responses {
+                self.messages.push(ChatMessage::from(tool_response));
+            }
+        }
+
         Ok(())
     }
 
     pub fn message(&mut self, message: String) -> Result<(), Error> {
         self.messages.push(ChatMessage::user(message));
-
         Ok(())
     }
 }

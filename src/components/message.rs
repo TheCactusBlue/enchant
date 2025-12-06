@@ -9,6 +9,9 @@ pub struct MessageProps {
 }
 
 fn should_ignore_message(message: &ChatMessage) -> bool {
+    if !message.content.contains_text() {
+        return true;
+    }
     match message.role {
         ChatRole::System => true,
         _ => false,

@@ -1,8 +1,10 @@
+use std::env;
+
 use iocraft::prelude::*;
 
 use crate::{
     agent::Session,
-    components::{AnsiText, InputBox, ThinkingIndicator, message::Message},
+    components::{AnsiText, COLOR_PRIMARY, InputBox, ThinkingIndicator, message::Message},
 };
 
 #[component]
@@ -24,8 +26,10 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
 
     element! {
       View (flex_direction: FlexDirection::Column) {
-        View(flex_direction: FlexDirection::Column, align_items: AlignItems::Center) {
+        View(flex_direction: FlexDirection::Column, align_items: AlignItems::Center, gap: 1) {
             AnsiText(content: include_str!("../../prompts/hat.ansi"))
+            Text(content: format!("Enchant CLI"), color: COLOR_PRIMARY, weight: Weight::Bold)
+            // Text(content: env::current_dir().unwrap().to_string_lossy())
         }
         View(flex_direction: FlexDirection::Column) {
             #(session.read().messages.iter().map(|m| {

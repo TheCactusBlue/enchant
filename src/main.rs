@@ -12,5 +12,4 @@ async fn main() {
 
     print!("{}[2J", 27 as char); // clear console
     element!(App).render_loop().await.unwrap();
-    print!("{}[2J", 27 as char); // clear console
 }
