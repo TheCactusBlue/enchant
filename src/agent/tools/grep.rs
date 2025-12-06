@@ -1,7 +1,10 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::agent::tools::{Tool, tool::ToolInfo};
+use crate::agent::tools::{
+    Tool,
+    tool::{ToolError, ToolInfo},
+};
 
 pub struct Grep;
 
@@ -17,7 +20,7 @@ impl Tool for Grep {
         ToolInfo::new("Grep").with_description("Uses ripgrep to search through the directory.")
     }
 
-    async fn execute(_input: Self::Input) -> String {
-        "placeholder".to_string()
+    async fn execute(_input: Self::Input) -> Result<String, ToolError> {
+        Ok("placeholder".to_string())
     }
 }
