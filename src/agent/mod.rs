@@ -34,15 +34,17 @@ impl Session {
 
         let calls = response.tool_calls();
         let tool_messages: Vec<ChatMessage> =
-            futures::future::join_all(calls.iter().map(async |call| {
+            futures::future::try_join_all(calls.iter().map(async |call| {
                 let resp = self
                     .tools
                     .call(call.fn_name.clone(), call.fn_arguments.clone())
-                    .await
-                    .unwrap();
-                ChatMessage::from(ToolResponse::new(call.call_id.clone(), resp))
+                    .await?;
+                Ok::<_, Error>(ChatMessage::from(ToolResponse::new(
+                    call.call_id.clone(),
+                    resp,
+                )))
             }))
-            .await;
+            .await?;
 
         self.messages.push(ChatMessage::assistant(response.content));
         self.messages.extend(tool_messages);
