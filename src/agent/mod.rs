@@ -1,9 +1,6 @@
 pub mod tools;
 
-use crate::{
-    agent::tools::{get_default_tools, tool::Toolset},
-    error::Error,
-};
+use crate::{agent::tools::tool::Toolset, error::Error};
 use genai::{
     Client,
     chat::{ChatMessage, ChatRequest, ToolResponse},
@@ -18,7 +15,7 @@ impl Session {
     pub fn new() -> Self {
         Self {
             messages: Vec::new(),
-            tools: get_default_tools(),
+            tools: Toolset::new(vec![]),
         }
     }
 
