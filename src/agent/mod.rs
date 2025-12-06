@@ -25,13 +25,6 @@ impl Session {
     }
 
     pub async fn think(&mut self) -> Result<(), Error> {
-        let (assistant_message, tool_messages) = self.think_impl().await?;
-        self.messages.push(assistant_message);
-        self.messages.extend(tool_messages);
-        Ok(())
-    }
-
-    async fn think_impl(&self) -> Result<(ChatMessage, Vec<ChatMessage>), Error> {
         let request = ChatRequest::new(self.messages.clone()).with_tools(self.tools.list_tools());
 
         let response = Client::builder()
@@ -50,14 +43,8 @@ impl Session {
         }))
         .await;
 
-        Ok((ChatMessage::assistant(response.content), tool_messages))
-    }
-
-    /// Call think on a State<Session>, avoiding holding the guard across await points
-    pub async fn think_state(session: &mut State<Session>) -> Result<(), Error> {
-        let mut sess = (*session.read()).clone();
-        sess.think().await?;
-        *session.write() = sess;
+        self.messages.push(ChatMessage::assistant(response.content));
+        self.messages.extend(tool_messages);
         Ok(())
     }
 

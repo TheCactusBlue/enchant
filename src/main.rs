@@ -16,7 +16,11 @@ fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let on_submit = hooks.use_async_handler(move |value: String| async move {
         session.write().message(value).unwrap();
         is_thinking.set(true);
-        Session::think_state(&mut session).await.unwrap();
+
+        let mut sess = (*session.read()).clone();
+        sess.think().await.unwrap();
+        *session.write() = sess;
+
         is_thinking.set(false);
     });
 
