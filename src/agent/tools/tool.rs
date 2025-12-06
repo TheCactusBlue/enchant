@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::format};
+use std::collections::HashMap;
 
 use async_trait::async_trait;
 use genai::chat::Tool as AITool;
@@ -14,6 +14,18 @@ pub trait Tool {
     fn get_info() -> ToolInfo;
     fn execute(input: Self::Input)
     -> impl Future<Output = Result<String, ToolError>> + Send + Sync;
+
+    /// Returns true if this tool requires user permission before execution.
+    /// Default is false for backwards compatibility.
+    fn requires_permission() -> bool {
+        false
+    }
+
+    /// Returns a human-readable description of the action for permission prompts.
+    /// Only called when requires_permission() returns true.
+    fn describe_action(_input: &Self::Input) -> String {
+        format!("Execute {}", Self::get_info().name)
+    }
 }
 
 pub struct ToolInfo {
@@ -39,10 +51,21 @@ impl ToolInfo {
     }
 }
 
+/// A request for user permission to execute a tool.
+#[derive(Clone, Debug)]
+pub struct PermissionRequest {
+    pub call_id: String,
+    pub tool_name: String,
+    pub description: String,
+    pub input: Value,
+}
+
 #[async_trait]
 pub trait WrappedTool {
     async fn call(&self, input: Value) -> Result<String, ToolError>;
     fn to_tool(&self) -> AITool;
+    fn requires_permission(&self) -> bool;
+    fn describe_action(&self, input: &Value) -> String;
 }
 
 #[async_trait]
@@ -57,9 +80,21 @@ impl<T: Tool + Sync> WrappedTool for T {
             config: info.config,
         }
     }
+
     async fn call(&self, input: Value) -> Result<String, ToolError> {
         let value: T::Input = serde_json::from_value(input).unwrap();
         Ok(T::execute(value).await?)
+    }
+
+    fn requires_permission(&self) -> bool {
+        T::requires_permission()
+    }
+
+    fn describe_action(&self, input: &Value) -> String {
+        match serde_json::from_value::<T::Input>(input.clone()) {
+            Ok(typed_input) => T::describe_action(&typed_input),
+            Err(_) => format!("Execute {}", T::get_info().name),
+        }
     }
 }
 
@@ -77,6 +112,20 @@ impl Toolset {
 
     pub fn list_tools(&self) -> Vec<AITool> {
         self.order.clone()
+    }
+
+    pub fn requires_permission(&self, name: &str) -> bool {
+        self.tools
+            .get(name)
+            .map(|t| t.requires_permission())
+            .unwrap_or(false)
+    }
+
+    pub fn describe_action(&self, name: &str, input: &Value) -> String {
+        self.tools
+            .get(name)
+            .map(|t| t.describe_action(input))
+            .unwrap_or_else(|| format!("Execute {}", name))
     }
 
     pub async fn call(&self, name: String, input: Value) -> Result<String, ToolError> {

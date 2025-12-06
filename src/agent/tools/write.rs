@@ -20,6 +20,14 @@ impl Tool for Write {
         ToolInfo::new("Write").with_description(include_str!("./write.md"))
     }
 
+    fn requires_permission() -> bool {
+        true
+    }
+
+    fn describe_action(input: &Self::Input) -> String {
+        format!("Write file: {}", input.path)
+    }
+
     async fn execute(input: Self::Input) -> Result<String, ToolError> {
         tokio::fs::write(input.path, input.content.clone()).await?;
         Ok(input.content)

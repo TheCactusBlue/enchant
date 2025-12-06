@@ -19,6 +19,14 @@ impl Tool for Edit {
         ToolInfo::new("Edit").with_description(include_str!("./edit.md"))
     }
 
+    fn requires_permission() -> bool {
+        true
+    }
+
+    fn describe_action(input: &Self::Input) -> String {
+        format!("Edit file: {}", input.path)
+    }
+
     async fn execute(input: Self::Input) -> Result<String, ToolError> {
         let old_file = tokio::fs::read_to_string(input.path.clone()).await?;
         let new_file = old_file.replacen(&input.old_string, &input.new_string, 1);
