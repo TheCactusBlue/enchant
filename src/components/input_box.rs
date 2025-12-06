@@ -14,6 +14,8 @@ pub fn InputBox(mut hooks: Hooks, props: &mut InputBoxProps) -> impl Into<AnyEle
     let mut on_submit = props.on_submit.take();
     let value = props.value.clone();
 
+    let (w, _) = hooks.use_terminal_size();
+
     hooks.use_terminal_events({
         move |event| match event {
             TerminalEvent::Key(KeyEvent { kind, code, .. })
@@ -30,7 +32,7 @@ pub fn InputBox(mut hooks: Hooks, props: &mut InputBoxProps) -> impl Into<AnyEle
             border_style: BorderStyle::Single,
             padding_left: 1,
             padding_right: 1,
-            min_width: 80,
+            min_width: w,
             min_height: 5,
             max_height: 40,
             border_color: COLOR_PRIMARY

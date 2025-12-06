@@ -40,7 +40,9 @@ const MESSAGE_LINE: BorderStyle = BorderStyle::Custom(BorderCharacters {
 });
 
 #[component]
-pub fn Message(mut _hooks: Hooks, props: &MessageProps) -> impl Into<AnyElement<'static>> {
+pub fn Message(mut hooks: Hooks, props: &MessageProps) -> impl Into<AnyElement<'static>> {
+    let (w, _) = hooks.use_terminal_size();
+
     element! {
         View() {
             #(if let Some(message) = &props.message && !should_ignore_message(&message) {
@@ -50,14 +52,14 @@ pub fn Message(mut _hooks: Hooks, props: &MessageProps) -> impl Into<AnyElement<
                     View(flex_direction: FlexDirection::Column, max_width: 80) {
                         #(tool_calls.iter().map(|tc| {
                             element! {
-                                View(max_width: 80, border_style: MESSAGE_LINE, padding_left: 1, border_color: COLOR_TOOL) {
+                                View(max_width: w, border_style: MESSAGE_LINE, padding_left: 1, border_color: COLOR_TOOL) {
                                     Text(content: format!("{}({})", tc.fn_name, tc.fn_arguments), color: COLOR_TOOL, wrap: TextWrap::Wrap)
                                 }
                             }
                         }).collect::<Vec<_>>())
                         #(if !text_content.is_empty() {
                             Some(element! {
-                                View (max_width: 80, border_style: MESSAGE_LINE, padding_left: 1, border_color: match message.role {
+                                View (max_width: w, border_style: MESSAGE_LINE, padding_left: 1, border_color: match message.role {
                                     ChatRole::Assistant => Some(COLOR_PRIMARY),
                                     _ => None,
                                 }) {
