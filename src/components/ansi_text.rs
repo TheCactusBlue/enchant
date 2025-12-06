@@ -10,6 +10,8 @@ pub struct AnsiTextProps {
 struct StyledRun {
     x: usize,
     text: String,
+    /// Pre-computed character count for background width
+    char_count: usize,
     fg: Option<Color>,
     bg: Option<Color>,
 }
@@ -74,13 +76,7 @@ impl Component for AnsiText {
             for run in line_runs {
                 // Set background color for this run if needed
                 if let Some(bg) = run.bg {
-                    canvas.set_background_color(
-                        run.x as isize,
-                        *y as isize,
-                        run.text.chars().count(),
-                        1,
-                        bg,
-                    );
+                    canvas.set_background_color(run.x as isize, *y as isize, run.char_count, 1, bg);
                 }
 
                 // Render the text with foreground color
@@ -100,6 +96,7 @@ fn parse_ansi_to_runs(input: &str) -> (Vec<(usize, Vec<StyledRun>)>, usize, usiz
     let mut current_run = StyledRun {
         x: 0,
         text: String::new(),
+        char_count: 0,
         fg: None,
         bg: None,
     };
@@ -133,6 +130,7 @@ fn parse_ansi_to_runs(input: &str) -> (Vec<(usize, Vec<StyledRun>)>, usize, usiz
                                 current_run = StyledRun {
                                     x,
                                     text: String::new(),
+                                    char_count: 0,
                                     fg: new_state.fg,
                                     bg: new_state.bg,
                                 };
@@ -158,6 +156,7 @@ fn parse_ansi_to_runs(input: &str) -> (Vec<(usize, Vec<StyledRun>)>, usize, usiz
             current_run = StyledRun {
                 x: 0,
                 text: String::new(),
+                char_count: 0,
                 fg: state.fg,
                 bg: state.bg,
             };
@@ -167,6 +166,7 @@ fn parse_ansi_to_runs(input: &str) -> (Vec<(usize, Vec<StyledRun>)>, usize, usiz
             // Ignore carriage returns
         } else {
             current_run.text.push(c);
+            current_run.char_count += 1;
             x += 1;
         }
     }

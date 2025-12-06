@@ -3,6 +3,7 @@ use iocraft::prelude::*;
 use crate::components::app::App;
 
 pub mod agent;
+pub mod commands;
 pub mod components;
 pub mod error;
 
