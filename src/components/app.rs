@@ -2,7 +2,7 @@ use iocraft::prelude::*;
 
 use crate::{
     agent::Session,
-    components::{InputBox, ThinkingIndicator},
+    components::{InputBox, ThinkingIndicator, message::Message},
 };
 
 #[component]
@@ -27,7 +27,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
         View(flex_direction: FlexDirection::Column) {
             #(session.read().messages.iter().map(|m| {
                 element! {
-                    Text (content: format!("{:?}", m))
+                    Message (message: m.clone())
                 }
             }))
         }

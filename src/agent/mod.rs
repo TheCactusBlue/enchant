@@ -18,7 +18,7 @@ pub struct Session {
 impl Session {
     pub fn new() -> Self {
         Self {
-            messages: Vec::new(),
+            messages: vec![ChatMessage::system(include_str!("../../prompts/BASE.md"))],
             tools: Arc::new(Toolset::new(vec![])),
         }
     }

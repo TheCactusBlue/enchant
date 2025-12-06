@@ -1,5 +1,6 @@
 pub mod app;
 pub mod input_box;
+pub mod message;
 pub mod thinking_indicator;
 
 pub use input_box::*;
