@@ -1,8 +1,10 @@
+pub mod ansi_text;
 pub mod app;
 pub mod input_box;
 pub mod message;
 pub mod thinking_indicator;
 
+pub use ansi_text::*;
 pub use input_box::*;
 use iocraft::Color;
 pub use thinking_indicator::*;
