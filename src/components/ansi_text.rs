@@ -5,21 +5,25 @@ pub struct AnsiTextProps {
     pub content: String,
 }
 
-#[derive(Default)]
-pub struct AnsiText {
-    lines: Vec<Vec<AnsiCell>>,
-    width: usize,
-    height: usize,
-}
-
-#[derive(Default, Clone, Copy)]
-struct AnsiCell {
-    char: char,
+/// A run of characters with the same style on a single line
+#[derive(Clone)]
+struct StyledRun {
+    x: usize,
+    text: String,
     fg: Option<Color>,
     bg: Option<Color>,
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default)]
+pub struct AnsiText {
+    /// Pre-computed styled runs for efficient drawing
+    runs: Vec<(usize, Vec<StyledRun>)>, // (y, runs on that line)
+    width: usize,
+    height: usize,
+    last_content: String,
+}
+
+#[derive(Default, Clone, Copy, PartialEq)]
 struct AnsiState {
     fg: Option<Color>,
     bg: Option<Color>,
@@ -38,13 +42,20 @@ impl Component for AnsiText {
         _hooks: Hooks,
         updater: &mut ComponentUpdater,
     ) {
+        // Only re-parse if content has changed
+        if props.content == self.last_content {
+            return;
+        }
+        self.last_content = props.content.clone();
+
         // Convert \e to real ESC (0x1B) if the file uses escaped notation
         let content = props.content.replace("\\e[", "\x1b[");
 
-        // Parse into cells
-        self.lines = parse_ansi_to_cells(&content);
-        self.height = self.lines.len();
-        self.width = self.lines.iter().map(|l| l.len()).max().unwrap_or(0);
+        // Parse into styled runs for efficient drawing
+        let (runs, width, height) = parse_ansi_to_runs(&content);
+        self.runs = runs;
+        self.width = width;
+        self.height = height;
 
         updater.set_measure_func(Box::new({
             let width = self.width;
@@ -59,34 +70,44 @@ impl Component for AnsiText {
     fn draw(&mut self, drawer: &mut ComponentDrawer<'_>) {
         let mut canvas = drawer.canvas();
 
-        for (y, line) in self.lines.iter().enumerate() {
-            for (x, cell) in line.iter().enumerate() {
-                // Set background color for this cell if needed
-                if let Some(bg) = cell.bg {
-                    canvas.set_background_color(x as isize, y as isize, 1, 1, bg);
+        for (y, line_runs) in &self.runs {
+            for run in line_runs {
+                // Set background color for this run if needed
+                if let Some(bg) = run.bg {
+                    canvas.set_background_color(
+                        run.x as isize,
+                        *y as isize,
+                        run.text.chars().count(),
+                        1,
+                        bg,
+                    );
                 }
 
-                // Render the character with foreground color
-                if cell.char != '\0' && cell.char != ' ' || cell.bg.is_some() {
-                    let mut style = CanvasTextStyle::default();
-                    style.color = cell.fg;
-                    let s = if cell.char == '\0' {
-                        " "
-                    } else {
-                        &cell.char.to_string()
-                    };
-                    canvas.set_text(x as isize, y as isize, s, style);
-                }
+                // Render the text with foreground color
+                let mut style = CanvasTextStyle::default();
+                style.color = run.fg;
+                canvas.set_text(run.x as isize, *y as isize, &run.text, style);
             }
         }
     }
 }
 
-fn parse_ansi_to_cells(input: &str) -> Vec<Vec<AnsiCell>> {
-    let mut lines: Vec<Vec<AnsiCell>> = Vec::new();
-    let mut current_line: Vec<AnsiCell> = Vec::new();
+/// Parse ANSI text into styled runs for efficient drawing.
+/// Returns (runs, width, height)
+fn parse_ansi_to_runs(input: &str) -> (Vec<(usize, Vec<StyledRun>)>, usize, usize) {
+    let mut all_runs: Vec<(usize, Vec<StyledRun>)> = Vec::new();
+    let mut current_line_runs: Vec<StyledRun> = Vec::new();
+    let mut current_run = StyledRun {
+        x: 0,
+        text: String::new(),
+        fg: None,
+        bg: None,
+    };
     let mut state = AnsiState::default();
     let mut chars = input.chars().peekable();
+    let mut x = 0usize;
+    let mut y = 0usize;
+    let mut max_width = 0usize;
 
     while let Some(c) = chars.next() {
         if c == '\x1b' {
@@ -104,30 +125,63 @@ fn parse_ansi_to_cells(input: &str) -> Vec<Vec<AnsiCell>> {
                 // Consume the final character (usually 'm')
                 if let Some(cmd) = chars.next() {
                     if cmd == 'm' {
-                        state = parse_sgr(&params, state);
+                        let new_state = parse_sgr(&params, state);
+                        // If style changed, finish current run and start new one
+                        if new_state != state {
+                            if !current_run.text.is_empty() {
+                                current_line_runs.push(current_run);
+                                current_run = StyledRun {
+                                    x,
+                                    text: String::new(),
+                                    fg: new_state.fg,
+                                    bg: new_state.bg,
+                                };
+                            } else {
+                                current_run.fg = new_state.fg;
+                                current_run.bg = new_state.bg;
+                            }
+                            state = new_state;
+                        }
                     }
                 }
             }
         } else if c == '\n' {
-            lines.push(current_line);
-            current_line = Vec::new();
+            // Finish current run and line
+            if !current_run.text.is_empty() {
+                current_line_runs.push(current_run);
+            }
+            if !current_line_runs.is_empty() {
+                all_runs.push((y, current_line_runs));
+            }
+            max_width = max_width.max(x);
+            current_line_runs = Vec::new();
+            current_run = StyledRun {
+                x: 0,
+                text: String::new(),
+                fg: state.fg,
+                bg: state.bg,
+            };
+            x = 0;
+            y += 1;
         } else if c == '\r' {
             // Ignore carriage returns
         } else {
-            current_line.push(AnsiCell {
-                char: c,
-                fg: state.fg,
-                bg: state.bg,
-            });
+            current_run.text.push(c);
+            x += 1;
         }
     }
 
-    // Don't forget the last line if it doesn't end with newline
-    if !current_line.is_empty() {
-        lines.push(current_line);
+    // Don't forget the last run/line
+    if !current_run.text.is_empty() {
+        current_line_runs.push(current_run);
+    }
+    if !current_line_runs.is_empty() {
+        all_runs.push((y, current_line_runs));
+        max_width = max_width.max(x);
+        y += 1;
     }
 
-    lines
+    (all_runs, max_width, y)
 }
 
 /// Parse SGR (Select Graphic Rendition) parameters
