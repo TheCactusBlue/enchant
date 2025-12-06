@@ -441,6 +441,9 @@ pub struct EnhancedInputProps {
     pub color: Option<Color>,
     pub cursor_color: Option<Color>,
     pub multiline: bool,
+    /// If true, Shift+Enter inserts newline and Enter submits.
+    /// If false (default in multiline), Enter inserts newline and Ctrl+Enter submits.
+    pub submit_on_enter: bool,
     pub has_focus: bool,
 }
 
@@ -454,6 +457,7 @@ pub fn EnhancedInput(
     let mut on_change = props.on_change.take();
     let mut on_submit = props.on_submit.take();
     let multiline = props.multiline;
+    let submit_on_enter = props.submit_on_enter;
 
     // Sync external value changes to buffer
     {
@@ -485,9 +489,25 @@ pub fn EnhancedInput(
                 let mut buf = buffer.write();
                 let mut changed = false;
 
+                // Enter key handling depends on mode:
+                // - submit_on_enter: Enter submits, Shift+Enter inserts newline
+                // - !submit_on_enter (multiline default): Enter inserts newline, Ctrl+Enter submits
+                // - single-line: Enter always submits
                 match code {
-                    // Submit on Enter (without modifiers in single-line, with Ctrl in multiline)
-                    KeyCode::Enter if !multiline || ctrl => {
+                    // Submit conditions
+                    KeyCode::Enter if !multiline => {
+                        let text = buf.text().to_string();
+                        drop(buf);
+                        (on_submit)(text);
+                        return;
+                    }
+                    KeyCode::Enter if submit_on_enter && !shift => {
+                        let text = buf.text().to_string();
+                        drop(buf);
+                        (on_submit)(text);
+                        return;
+                    }
+                    KeyCode::Enter if !submit_on_enter && ctrl => {
                         let text = buf.text().to_string();
                         drop(buf);
                         (on_submit)(text);

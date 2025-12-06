@@ -30,6 +30,7 @@ pub fn InputBox(mut hooks: Hooks, props: &mut InputBoxProps) -> impl Into<AnyEle
                 on_change: props.on_change.take(),
                 on_submit: props.on_submit.take(),
                 multiline: true,
+                submit_on_enter: true,
             )
         }
     }
