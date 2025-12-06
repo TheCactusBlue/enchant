@@ -101,7 +101,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     element! {
       View (flex_direction: FlexDirection::Column) {
         View(flex_direction: FlexDirection::Column, align_items: AlignItems::Center, gap: 1) {
-            AnsiText(content: include_str!("../../prompts/hat.ansi"))
+            AnsiText(content: include_str!("../../prompts/char.ansi"))
             Text(content: format!("Enchant CLI"), color: COLOR_PRIMARY, weight: Weight::Bold)
         }
         View(flex_direction: FlexDirection::Column) {
