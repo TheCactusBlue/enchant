@@ -11,10 +11,13 @@ pub mod error;
 fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let mut input = hooks.use_state(|| "".to_string());
     let mut session = hooks.use_state(|| Session::new());
+    let mut is_thinking = hooks.use_state(|| false);
 
     let on_submit = hooks.use_async_handler(move |value: String| async move {
         session.write().message(value).unwrap();
+        is_thinking.set(true);
         Session::think_state(&mut session).await.unwrap();
+        is_thinking.set(false);
     });
 
     element! {
@@ -28,7 +31,14 @@ fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
         }
 
         View(margin_top: 1) {
-            ThinkingIndicator()
+            #(if *is_thinking.read() {
+                Some(element! {
+                    ThinkingIndicator()
+
+                })
+            } else {
+                None
+            })
         }
 
         InputBox(
