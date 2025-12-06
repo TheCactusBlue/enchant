@@ -10,7 +10,7 @@ pub trait Tool {
     type Input: Serialize + DeserializeOwned + JsonSchema;
 
     fn get_info() -> ToolInfo;
-    fn execute(input: Self::Input) -> impl Future<Output = ()> + Send + Sync;
+    fn execute(input: Self::Input) -> impl Future<Output = String> + Send + Sync;
 }
 
 pub struct ToolInfo {
@@ -38,7 +38,7 @@ impl ToolInfo {
 
 #[async_trait]
 pub trait WrappedTool {
-    async fn call(&self, input: Value);
+    async fn call(&self, input: Value) -> String;
     fn to_tool(&self) -> AITool;
 }
 
@@ -54,9 +54,9 @@ impl<T: Tool + Sync> WrappedTool for T {
             config: info.config,
         }
     }
-    async fn call(&self, input: Value) {
+    async fn call(&self, input: Value) -> String {
         let value: T::Input = serde_json::from_value(input).unwrap();
-        T::execute(value).await;
+        T::execute(value).await
     }
 }
 
@@ -76,8 +76,8 @@ impl Toolset {
         self.order.clone()
     }
 
-    pub async fn call(&self, name: String, input: Value) {
+    pub async fn call(&self, name: String, input: Value) -> String {
         let tool = self.tools.get(&name).unwrap();
-        tool.call(input).await;
+        tool.call(input).await
     }
 }

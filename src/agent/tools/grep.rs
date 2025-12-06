@@ -17,5 +17,7 @@ impl Tool for Grep {
         ToolInfo::new("Grep").with_description("Uses ripgrep to search through the directory.")
     }
 
-    async fn execute(_input: Self::Input) {}
+    async fn execute(_input: Self::Input) -> String {
+        "placeholder".to_string()
+    }
 }

@@ -6,7 +6,7 @@ use crate::{
 };
 use genai::{
     Client,
-    chat::{ChatMessage, ChatRequest},
+    chat::{ChatMessage, ChatRequest, ToolResponse},
 };
 
 pub struct Session {
@@ -30,7 +30,17 @@ impl Session {
             .await?;
 
         let calls = response.tool_calls();
+        let calls = futures::future::join_all(calls.iter().map(async |call| {
+            let resp = self
+                .tools
+                .call(call.fn_name.clone(), call.fn_arguments.clone())
+                .await;
+            ToolResponse::new(call.call_id.clone(), resp)
+        }))
+        .await;
         self.messages.push(ChatMessage::assistant(response.content));
+        self.messages
+            .append(&mut calls.into_iter().map(|x| ChatMessage::from(x)).collect());
 
         Ok(())
     }
