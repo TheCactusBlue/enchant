@@ -50,8 +50,8 @@ pub fn Message(mut _hooks: Hooks, props: &MessageProps) -> impl Into<AnyElement<
                     View(flex_direction: FlexDirection::Column, max_width: 80) {
                         #(tool_calls.iter().map(|tc| {
                             element! {
-                                View(border_style: MESSAGE_LINE, padding_left: 1, border_color: COLOR_TOOL) {
-                                    Text(content: format!("{}({})", tc.fn_name, tc.fn_arguments), color: COLOR_TOOL)
+                                View(max_width: 80, border_style: MESSAGE_LINE, padding_left: 1, border_color: COLOR_TOOL) {
+                                    Text(content: format!("{}({})", tc.fn_name, tc.fn_arguments), color: COLOR_TOOL, wrap: TextWrap::Wrap)
                                 }
                             }
                         }).collect::<Vec<_>>())

@@ -54,15 +54,22 @@ impl Session {
             }
 
             // Execute all tool calls and collect responses
+            // Tool errors are returned as error messages so the agent can learn and retry
             let tool_responses: Vec<ToolResponse> =
-                futures::future::try_join_all(tool_calls.iter().map(async |call| {
-                    let resp = self
+                futures::future::join_all(tool_calls.iter().map(async |call| {
+                    match self
                         .tools
                         .call(call.fn_name.clone(), call.fn_arguments.clone())
-                        .await?;
-                    Ok::<_, Error>(ToolResponse::new(call.call_id.clone(), resp))
+                        .await
+                    {
+                        Ok(resp) => ToolResponse::new(call.call_id.clone(), resp),
+                        Err(e) => ToolResponse::new(
+                            call.call_id.clone(),
+                            format!("Error: {}", e),
+                        ),
+                    }
                 }))
-                .await?;
+                .await;
 
             // Add both the tool calls from the model and our tool responses to the chat history
             let tool_calls = response.into_tool_calls();
