@@ -1,3 +1,4 @@
+pub mod app;
 pub mod input_box;
 pub mod thinking_indicator;
 

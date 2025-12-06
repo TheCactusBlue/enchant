@@ -8,7 +8,6 @@ use genai::{
     chat::{ChatMessage, ChatRequest, ToolResponse},
     resolver::{AuthData, AuthResolver},
 };
-use iocraft::prelude::State;
 
 #[derive(Clone)]
 pub struct Session {
