@@ -97,12 +97,15 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
 
     // Get current state for rendering
     let current_state = (*app_state.read()).clone();
-
+    let sess = session.read();
     element! {
       View (flex_direction: FlexDirection::Column) {
         View(flex_direction: FlexDirection::Column, align_items: AlignItems::Center, gap: 1) {
             AnsiText(content: include_str!("../../prompts/char.ansi"))
-            Text(content: format!("Enchant CLI"), color: COLOR_PRIMARY, weight: Weight::Bold)
+            Text(content: format!("Enchant CLI · {} · {}",
+            sess.model,
+            sess.working_directory.display()
+        ), color: COLOR_PRIMARY, weight: Weight::Bold)
         }
         View(flex_direction: FlexDirection::Column) {
             #(session.read().messages.iter().map(|m| {

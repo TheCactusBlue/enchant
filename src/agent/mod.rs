@@ -1,7 +1,10 @@
 pub mod prompt;
 pub mod tools;
 
-use std::sync::Arc;
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use crate::{
     agent::{
@@ -43,6 +46,9 @@ pub enum ThinkResult {
 
 #[derive(Clone)]
 pub struct Session {
+    pub model: String,
+    pub working_directory: PathBuf,
+
     pub messages: Vec<ChatMessage>,
     pub tools: Arc<Toolset>,
     /// Pending tool calls from the last response, waiting to be executed.
@@ -56,6 +62,8 @@ pub struct Session {
 impl Session {
     pub fn new() -> Self {
         Self {
+            model: "claude-haiku-4-5".to_string(),
+            working_directory: std::env::current_dir().unwrap(),
             messages: vec![ChatMessage::system(build_system_prompt())],
             tools: Arc::new(Toolset::new(vec![
                 Box::new(Read),
@@ -84,7 +92,7 @@ impl Session {
 
         let request = ChatRequest::new(self.messages.clone()).with_tools(self.tools.list_tools());
 
-        let response = client.exec_chat("claude-haiku-4-5", request, None).await?;
+        let response = client.exec_chat(&self.model, request, None).await?;
 
         // Get tool calls - need to clone since we use them twice
         let tool_calls = response.tool_calls();
