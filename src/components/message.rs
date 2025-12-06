@@ -3,13 +3,23 @@ use iocraft::prelude::*;
 
 use crate::components::COLOR_PRIMARY;
 
+const COLOR_TOOL: Color = Color::Rgb {
+    r: 100,
+    g: 149,
+    b: 237,
+}; // Cornflower blue
+
 #[derive(Default, Props)]
 pub struct MessageProps {
     pub message: Option<ChatMessage>,
 }
 
+fn has_displayable_content(message: &ChatMessage) -> bool {
+    message.content.contains_text() || !message.content.tool_calls().is_empty()
+}
+
 fn should_ignore_message(message: &ChatMessage) -> bool {
-    if !message.content.contains_text() {
+    if !has_displayable_content(message) {
         return true;
     }
     match message.role {
@@ -34,12 +44,27 @@ pub fn Message(mut _hooks: Hooks, props: &MessageProps) -> impl Into<AnyElement<
     element! {
         View() {
             #(if let Some(message) = &props.message && !should_ignore_message(&message) {
+                let tool_calls = message.content.tool_calls();
+                let text_content = message.content.clone().into_joined_texts().unwrap_or("".to_string());
                 Some(element! {
-                    View (max_width: 80, border_style: MESSAGE_LINE, padding_left: 1, border_color: match message.role {
-                        ChatRole::Assistant => Some(COLOR_PRIMARY),
-                        _ => None,
-                    }) {
-                        Text (content: message.content.clone().into_joined_texts().unwrap_or("".to_string()) )
+                    View(flex_direction: FlexDirection::Column) {
+                        #(tool_calls.iter().map(|tc| {
+                            element! {
+                                View(border_style: MESSAGE_LINE, padding_left: 1, border_color: COLOR_TOOL) {
+                                    Text(content: format!("{}({})", tc.fn_name, tc.fn_arguments), color: COLOR_TOOL)
+                                }
+                            }
+                        }).collect::<Vec<_>>())
+                        #(if !text_content.is_empty() {
+                            Some(element! {
+                                View (max_width: 80, border_style: MESSAGE_LINE, padding_left: 1, border_color: match message.role {
+                                    ChatRole::Assistant => Some(COLOR_PRIMARY),
+                                    _ => None,
+                                }) {
+                                    Text (content: text_content)
+                                }
+                            })
+                        } else { None })
                     }
                 })
             } else { None })
