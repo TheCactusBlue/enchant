@@ -6,7 +6,7 @@ use std::sync::Arc;
 use crate::{
     agent::{
         prompt::build_system_prompt,
-        tools::{glob::Glob, read::Read, tool::Toolset},
+        tools::{edit::Edit, glob::Glob, read::Read, tool::Toolset},
     },
     error::Error,
 };
@@ -26,7 +26,11 @@ impl Session {
     pub fn new() -> Self {
         Self {
             messages: vec![ChatMessage::system(build_system_prompt())],
-            tools: Arc::new(Toolset::new(vec![Box::new(Read), Box::new(Glob)])),
+            tools: Arc::new(Toolset::new(vec![
+                Box::new(Read),
+                Box::new(Glob),
+                Box::new(Edit),
+            ])),
         }
     }
 
