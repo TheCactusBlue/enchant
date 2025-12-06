@@ -1,5 +1,3 @@
-use std::env;
-
 use iocraft::prelude::*;
 
 use crate::{

@@ -6,3 +6,4 @@ pub mod grep;
 pub mod read;
 pub mod tool;
 pub mod tool_error;
+pub mod write;

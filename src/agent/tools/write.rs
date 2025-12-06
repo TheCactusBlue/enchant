@@ -1,0 +1,27 @@
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
+use crate::agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError};
+
+pub struct Write;
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+pub struct WriteInput {
+    /// Absolute path to the file that will be created
+    pub path: String,
+    /// Content of the new file.
+    pub content: String,
+}
+
+impl Tool for Write {
+    type Input = WriteInput;
+
+    fn get_info() -> ToolInfo {
+        ToolInfo::new("Write").with_description(include_str!("./write.md"))
+    }
+
+    async fn execute(input: Self::Input) -> Result<String, ToolError> {
+        tokio::fs::write(input.path, input.content.clone()).await?;
+        Ok(input.content)
+    }
+}

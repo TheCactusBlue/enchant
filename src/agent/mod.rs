@@ -6,7 +6,7 @@ use std::sync::Arc;
 use crate::{
     agent::{
         prompt::build_system_prompt,
-        tools::{edit::Edit, glob::Glob, read::Read, tool::Toolset},
+        tools::{edit::Edit, glob::Glob, read::Read, tool::Toolset, write::Write},
     },
     error::Error,
 };
@@ -30,6 +30,7 @@ impl Session {
                 Box::new(Read),
                 Box::new(Glob),
                 Box::new(Edit),
+                Box::new(Write),
             ])),
         }
     }
@@ -63,10 +64,7 @@ impl Session {
                         .await
                     {
                         Ok(resp) => ToolResponse::new(call.call_id.clone(), resp),
-                        Err(e) => ToolResponse::new(
-                            call.call_id.clone(),
-                            format!("Error: {}", e),
-                        ),
+                        Err(e) => ToolResponse::new(call.call_id.clone(), format!("Error: {}", e)),
                     }
                 }))
                 .await;
