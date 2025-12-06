@@ -24,7 +24,9 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
 
     element! {
       View (flex_direction: FlexDirection::Column) {
-        AnsiText(content: include_str!("../../prompts/hat.ansi"))
+        View(flex_direction: FlexDirection::Column, align_items: AlignItems::Center) {
+            AnsiText(content: include_str!("../../prompts/hat.ansi"))
+        }
         View(flex_direction: FlexDirection::Column) {
             #(session.read().messages.iter().map(|m| {
                 element! {
