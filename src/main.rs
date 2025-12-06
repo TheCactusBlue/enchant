@@ -12,6 +12,11 @@ fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let mut input = hooks.use_state(|| "".to_string());
     let mut session = hooks.use_state(|| Session::new());
 
+    let on_submit = hooks.use_async_handler(move |value: String| async move {
+        session.write().message(value).unwrap();
+        Session::think_state(&mut session).await.unwrap();
+    });
+
     element! {
       View (flex_direction: FlexDirection::Column) {
         View(flex_direction: FlexDirection::Column) {
@@ -30,8 +35,7 @@ fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
             value: input.to_string(),
             on_change: move |new_value| input.set(new_value),
             on_submit: move |value| {
-                let mut sess = session.write();
-                sess.message(value).unwrap();
+                on_submit(value);
                 input.set("".to_string());
             },
         )
