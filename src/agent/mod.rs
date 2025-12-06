@@ -2,8 +2,9 @@ pub mod tools;
 
 use crate::{agent::tools::tool::Toolset, error::Error};
 use genai::{
-    Client,
+    Client, ModelIden,
     chat::{ChatMessage, ChatRequest, ToolResponse},
+    resolver::{AuthData, AuthResolver},
 };
 
 pub struct Session {
@@ -22,7 +23,9 @@ impl Session {
     pub async fn think(&mut self) -> Result<(), Error> {
         let request = ChatRequest::new(self.messages.clone()).with_tools(self.tools.list_tools());
 
-        let response = Client::default()
+        let response = Client::builder()
+            .with_auth_resolver(auth_resolver())
+            .build()
             .exec_chat("claude-haiku-4-5", request, None)
             .await?;
 
@@ -47,4 +50,14 @@ impl Session {
 
         Ok(())
     }
+}
+
+pub fn auth_resolver() -> AuthResolver {
+    AuthResolver::from_resolver_fn(
+        |_model_iden: ModelIden| -> Result<Option<AuthData>, genai::resolver::Error> {
+            Ok(Some(AuthData::from_single(
+                std::env::var("ENCHANT_KEY").unwrap(),
+            )))
+        },
+    )
 }

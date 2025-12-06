@@ -1,3 +1,4 @@
+use dotenvy::dotenv;
 use iocraft::prelude::*;
 
 use crate::agent::Session;
@@ -41,6 +42,8 @@ fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
 
 #[tokio::main]
 async fn main() {
+    dotenvy::dotenv().unwrap();
+
     print!("{}[2J", 27 as char); // clear console
     element!(App).render_loop().await.unwrap();
     print!("{}[2J", 27 as char); // clear console
