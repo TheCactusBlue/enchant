@@ -1,5 +1,7 @@
 pub mod tools;
 
+use std::sync::Arc;
+
 use crate::{agent::tools::tool::Toolset, error::Error};
 use genai::{
     Client, ModelIden,
@@ -8,16 +10,17 @@ use genai::{
 };
 use iocraft::prelude::State;
 
+#[derive(Clone)]
 pub struct Session {
     pub messages: Vec<ChatMessage>,
-    pub tools: Toolset,
+    pub tools: Arc<Toolset>,
 }
 
 impl Session {
     pub fn new() -> Self {
         Self {
             messages: Vec::new(),
-            tools: Toolset::new(vec![]),
+            tools: Arc::new(Toolset::new(vec![])),
         }
     }
 
@@ -52,25 +55,9 @@ impl Session {
 
     /// Call think on a State<Session>, avoiding holding the guard across await points
     pub async fn think_state(session: &mut State<Session>) -> Result<(), Error> {
-        // Clone data out before async work to avoid holding non-Send guard across await
-        let (messages, tools_list) = {
-            let sess = session.read();
-            (sess.messages.clone(), sess.tools.list_tools())
-        };
-
-        let request = ChatRequest::new(messages).with_tools(tools_list);
-
-        let response = Client::builder()
-            .with_auth_resolver(auth_resolver())
-            .build()
-            .exec_chat("claude-haiku-4-5", request, None)
-            .await?;
-
-        // TODO: Handle tool calls when tools are implemented
-        // For now, tools list is empty so we skip tool execution
-
-        // Now write results back
-        session.write().messages.push(ChatMessage::assistant(response.content));
+        let mut sess = (*session.read()).clone();
+        sess.think().await?;
+        *session.write() = sess;
         Ok(())
     }
 
