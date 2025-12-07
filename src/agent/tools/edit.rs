@@ -31,11 +31,7 @@ impl Tool for Edit {
     }
 
     fn describe_action(input: &Self::Input) -> String {
-        format!("Edit file: {}", input.path)
-    }
-
-    fn display_message(input: &Self::Input) -> Option<String> {
-        Some(format!("Edit({})", format_path(&input.path).display()))
+        format!("Edit({})", format_path(&input.path).display())
     }
 
     async fn generate_preview(input: &Self::Input) -> Option<ToolPreview> {

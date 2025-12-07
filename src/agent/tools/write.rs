@@ -31,12 +31,8 @@ impl Tool for Write {
         true
     }
 
-    fn display_message(input: &Self::Input) -> Option<String> {
-        Some(format!("Write({})", format_path(&input.path).display()))
-    }
-
     fn describe_action(input: &Self::Input) -> String {
-        format!("Write file: {}", input.path)
+        format!("Write({})", format_path(&input.path).display())
     }
 
     async fn generate_preview(input: &Self::Input) -> Option<ToolPreview> {
