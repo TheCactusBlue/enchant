@@ -11,8 +11,8 @@ use crate::agent::tools::tool_error::ToolError;
 /// Preview content for permission prompts
 #[derive(Clone, Debug)]
 pub enum ToolPreview {
-    /// Preview for edit operations showing a diff
-    Edit { diff: String },
+    /// Preview for edit operations showing old and new file content
+    Edit { old_file: String, new_file: String },
     /// Preview for write operations showing the new file content
     Write { content: String },
 }

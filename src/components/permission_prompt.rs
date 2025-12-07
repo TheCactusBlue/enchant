@@ -1,4 +1,5 @@
 use iocraft::prelude::*;
+use similar::{ChangeTag, TextDiff};
 
 use crate::agent::tools::tool::ToolPreview;
 use crate::components::COLOR_PRIMARY;
@@ -85,19 +86,20 @@ pub fn PermissionPrompt(
 
     // Parse preview content into displayable lines
     let preview_lines: Vec<(String, Color)> = match &preview {
-        Some(ToolPreview::Edit { diff }) => diff
-            .lines()
-            .map(|line| {
-                let color = if line.starts_with('+') {
-                    Color::Green
-                } else if line.starts_with('-') {
-                    Color::Red
-                } else {
-                    Color::DarkGrey
-                };
-                (line.to_string(), color)
-            })
-            .collect(),
+        Some(ToolPreview::Edit { old_file, new_file }) => {
+            let text_diff = TextDiff::from_lines(old_file.as_str(), new_file.as_str());
+            text_diff
+                .iter_all_changes()
+                .map(|change| {
+                    let (sign, color) = match change.tag() {
+                        ChangeTag::Delete => ("-", Color::Red),
+                        ChangeTag::Insert => ("+", Color::Green),
+                        ChangeTag::Equal => (" ", Color::DarkGrey),
+                    };
+                    (format!("{}{}", sign, change.to_string_lossy().trim_end()), color)
+                })
+                .collect()
+        }
         Some(ToolPreview::Write { content }) => content
             .lines()
             .map(|line| (line.to_string(), Color::Green))

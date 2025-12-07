@@ -1,6 +1,5 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use similar::{ChangeTag, TextDiff};
 
 use crate::agent::tools::{
     Tool,
@@ -44,20 +43,7 @@ impl Tool for Edit {
             return None;
         }
 
-        // Generate unified diff using similar
-        let text_diff = TextDiff::from_lines(&old_file, &new_file);
-
-        let mut diff = String::new();
-        for change in text_diff.iter_all_changes() {
-            let sign = match change.tag() {
-                ChangeTag::Delete => "-",
-                ChangeTag::Insert => "+",
-                ChangeTag::Equal => " ",
-            };
-            diff.push_str(&format!("{}{}", sign, change));
-        }
-
-        Some(ToolPreview::Edit { diff })
+        Some(ToolPreview::Edit { old_file, new_file })
     }
 
     async fn execute(input: Self::Input) -> Result<String, ToolError> {

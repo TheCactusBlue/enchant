@@ -6,6 +6,7 @@ pub mod agent;
 pub mod commands;
 pub mod components;
 pub mod error;
+pub mod util;
 
 #[tokio::main]
 async fn main() {
