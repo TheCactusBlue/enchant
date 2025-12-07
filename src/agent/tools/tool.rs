@@ -9,7 +9,7 @@ use serde_json::Value;
 use crate::agent::tools::tool_error::ToolError;
 
 pub trait Tool {
-    type Input: Serialize + DeserializeOwned + JsonSchema;
+    type Input: Serialize + DeserializeOwned + JsonSchema + Send;
 
     fn get_info() -> ToolInfo;
     fn execute(input: Self::Input)
@@ -25,6 +25,12 @@ pub trait Tool {
     /// Only called when requires_permission() returns true.
     fn describe_action(_input: &Self::Input) -> String {
         format!("Execute {}", Self::get_info().name)
+    }
+
+    /// Generate a diff or additional context for permission prompts.
+    /// Returns None by default. Tools like Edit can override this to show diffs.
+    fn generate_diff(_input: &Self::Input) -> impl Future<Output = Option<String>> + Send + Sync {
+        async { None }
     }
 }
 
@@ -58,6 +64,8 @@ pub struct PermissionRequest {
     pub tool_name: String,
     pub description: String,
     pub input: Value,
+    /// Optional diff to display for edit-like operations
+    pub diff: Option<String>,
 }
 
 #[async_trait]
@@ -66,6 +74,7 @@ pub trait WrappedTool {
     fn to_tool(&self) -> AITool;
     fn requires_permission(&self) -> bool;
     fn describe_action(&self, input: &Value) -> String;
+    async fn generate_diff(&self, input: &Value) -> Option<String>;
 }
 
 #[async_trait]
@@ -94,6 +103,13 @@ impl<T: Tool + Sync> WrappedTool for T {
         match serde_json::from_value::<T::Input>(input.clone()) {
             Ok(typed_input) => T::describe_action(&typed_input),
             Err(_) => format!("Execute {}", T::get_info().name),
+        }
+    }
+
+    async fn generate_diff(&self, input: &Value) -> Option<String> {
+        match serde_json::from_value::<T::Input>(input.clone()) {
+            Ok(typed_input) => T::generate_diff(&typed_input).await,
+            Err(_) => None,
         }
     }
 }
@@ -131,5 +147,9 @@ impl Toolset {
     pub async fn call(&self, name: String, input: Value) -> Result<String, ToolError> {
         let tool = self.tools.get(&name).unwrap();
         Ok(tool.call(input).await?)
+    }
+
+    pub async fn generate_diff(&self, name: &str, input: &Value) -> Option<String> {
+        self.tools.get(name)?.generate_diff(input).await
     }
 }

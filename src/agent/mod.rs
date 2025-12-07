@@ -129,6 +129,12 @@ impl Session {
                 && !self.approved_calls.contains(&pending.call.call_id)
                 && !self.denied_calls.contains(&pending.call.call_id)
             {
+                // Generate diff if the tool supports it
+                let diff = self
+                    .tools
+                    .generate_diff(&pending.call.fn_name, &pending.call.fn_arguments)
+                    .await;
+
                 permission_requests.push(PermissionRequest {
                     call_id: pending.call.call_id.clone(),
                     tool_name: pending.call.fn_name.clone(),
@@ -136,6 +142,7 @@ impl Session {
                         .tools
                         .describe_action(&pending.call.fn_name, &pending.call.fn_arguments),
                     input: pending.call.fn_arguments.clone(),
+                    diff,
                 });
             }
         }

@@ -11,6 +11,7 @@ pub enum PermissionChoice {
 #[derive(Default, Props)]
 pub struct PermissionPromptProps {
     pub description: String,
+    pub diff: Option<String>,
     pub on_choice: HandlerMut<'static, PermissionChoice>,
 }
 
@@ -22,6 +23,7 @@ pub fn PermissionPrompt(
     let mut selected = hooks.use_state(|| 0usize); // 0 = Approve, 1 = Deny
     let mut on_choice = props.on_choice.take();
     let description = props.description.clone();
+    let diff = props.diff.clone();
 
     let (w, _) = hooks.use_terminal_size();
 
@@ -80,6 +82,25 @@ pub fn PermissionPrompt(
         Color::DarkGrey
     };
 
+    // Parse diff lines and colorize them
+    let diff_lines: Vec<(String, Color)> = diff
+        .as_ref()
+        .map(|d| {
+            d.lines()
+                .map(|line| {
+                    let color = if line.starts_with('+') {
+                        Color::Green
+                    } else if line.starts_with('-') {
+                        Color::Red
+                    } else {
+                        Color::DarkGrey
+                    };
+                    (line.to_string(), color)
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
     element! {
         View(
             flex_direction: FlexDirection::Column,
@@ -96,6 +117,25 @@ pub fn PermissionPrompt(
             View(margin_top: 1) {
                 Text(content: description)
             }
+            #(if !diff_lines.is_empty() {
+                Some(element! {
+                    View(
+                        margin_top: 1,
+                        flex_direction: FlexDirection::Column,
+                        border_style: BorderStyle::Single,
+                        border_color: Color::DarkGrey,
+                        padding: 1,
+                    ) {
+                        #(diff_lines.iter().map(|(line, color)| {
+                            element! {
+                                Text(content: line.clone(), color: *color)
+                            }
+                        }))
+                    }
+                })
+            } else {
+                None
+            })
             View(margin_top: 1, flex_direction: FlexDirection::Row, gap: 2) {
                 View(
                     border_style: approve_style,
