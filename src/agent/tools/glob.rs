@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError};
+use crate::{agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError}, util::format_path};
 
 pub struct Glob;
 
@@ -15,7 +15,7 @@ impl Tool for Glob {
     type Input = GlobInput;
 
     fn describe_action(input: &Self::Input) -> String {
-        format!("Glob({})", &input.pattern)
+        format!("Glob({})", format_path(&input.pattern).display())
     }
 
     fn get_info() -> ToolInfo {
