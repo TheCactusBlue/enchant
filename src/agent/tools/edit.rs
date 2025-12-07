@@ -2,7 +2,11 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use similar::{ChangeTag, TextDiff};
 
-use crate::agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError};
+use crate::agent::tools::{
+    Tool,
+    tool::{ToolInfo, ToolPreview},
+    tool_error::ToolError,
+};
 
 pub struct Edit;
 
@@ -28,7 +32,7 @@ impl Tool for Edit {
         format!("Edit file: {}", input.path)
     }
 
-    async fn generate_diff(input: &Self::Input) -> Option<String> {
+    async fn generate_preview(input: &Self::Input) -> Option<ToolPreview> {
         // Read the current file content
         let old_file = tokio::fs::read_to_string(&input.path).await.ok()?;
 
@@ -41,19 +45,19 @@ impl Tool for Edit {
         }
 
         // Generate unified diff using similar
-        let diff = TextDiff::from_lines(&old_file, &new_file);
+        let text_diff = TextDiff::from_lines(&old_file, &new_file);
 
-        let mut output = String::new();
-        for change in diff.iter_all_changes() {
+        let mut diff = String::new();
+        for change in text_diff.iter_all_changes() {
             let sign = match change.tag() {
                 ChangeTag::Delete => "-",
                 ChangeTag::Insert => "+",
                 ChangeTag::Equal => " ",
             };
-            output.push_str(&format!("{}{}", sign, change));
+            diff.push_str(&format!("{}{}", sign, change));
         }
 
-        Some(output)
+        Some(ToolPreview::Edit { diff })
     }
 
     async fn execute(input: Self::Input) -> Result<String, ToolError> {

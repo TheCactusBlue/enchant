@@ -8,6 +8,15 @@ use serde_json::Value;
 
 use crate::agent::tools::tool_error::ToolError;
 
+/// Preview content for permission prompts
+#[derive(Clone, Debug)]
+pub enum ToolPreview {
+    /// Preview for edit operations showing a diff
+    Edit { diff: String },
+    /// Preview for write operations showing the new file content
+    Write { content: String },
+}
+
 pub trait Tool {
     type Input: Serialize + DeserializeOwned + JsonSchema + Send;
 
@@ -27,9 +36,11 @@ pub trait Tool {
         format!("Execute {}", Self::get_info().name)
     }
 
-    /// Generate a diff or additional context for permission prompts.
-    /// Returns None by default. Tools like Edit can override this to show diffs.
-    fn generate_diff(_input: &Self::Input) -> impl Future<Output = Option<String>> + Send + Sync {
+    /// Generate a preview for permission prompts.
+    /// Returns None by default. Tools like Edit and Write can override this.
+    fn generate_preview(
+        _input: &Self::Input,
+    ) -> impl Future<Output = Option<ToolPreview>> + Send + Sync {
         async { None }
     }
 }
@@ -64,8 +75,8 @@ pub struct PermissionRequest {
     pub tool_name: String,
     pub description: String,
     pub input: Value,
-    /// Optional diff to display for edit-like operations
-    pub diff: Option<String>,
+    /// Optional preview to display for the operation
+    pub preview: Option<ToolPreview>,
 }
 
 #[async_trait]
@@ -74,7 +85,7 @@ pub trait WrappedTool {
     fn to_tool(&self) -> AITool;
     fn requires_permission(&self) -> bool;
     fn describe_action(&self, input: &Value) -> String;
-    async fn generate_diff(&self, input: &Value) -> Option<String>;
+    async fn generate_preview(&self, input: &Value) -> Option<ToolPreview>;
 }
 
 #[async_trait]
@@ -106,9 +117,9 @@ impl<T: Tool + Sync> WrappedTool for T {
         }
     }
 
-    async fn generate_diff(&self, input: &Value) -> Option<String> {
+    async fn generate_preview(&self, input: &Value) -> Option<ToolPreview> {
         match serde_json::from_value::<T::Input>(input.clone()) {
-            Ok(typed_input) => T::generate_diff(&typed_input).await,
+            Ok(typed_input) => T::generate_preview(&typed_input).await,
             Err(_) => None,
         }
     }
@@ -149,7 +160,7 @@ impl Toolset {
         Ok(tool.call(input).await?)
     }
 
-    pub async fn generate_diff(&self, name: &str, input: &Value) -> Option<String> {
-        self.tools.get(name)?.generate_diff(input).await
+    pub async fn generate_preview(&self, name: &str, input: &Value) -> Option<ToolPreview> {
+        self.tools.get(name)?.generate_preview(input).await
     }
 }

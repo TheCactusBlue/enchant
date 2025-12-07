@@ -1,7 +1,11 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError};
+use crate::agent::tools::{
+    Tool,
+    tool::{ToolInfo, ToolPreview},
+    tool_error::ToolError,
+};
 
 pub struct Write;
 
@@ -26,6 +30,12 @@ impl Tool for Write {
 
     fn describe_action(input: &Self::Input) -> String {
         format!("Write file: {}", input.path)
+    }
+
+    async fn generate_preview(input: &Self::Input) -> Option<ToolPreview> {
+        Some(ToolPreview::Write {
+            content: input.content.clone(),
+        })
     }
 
     async fn execute(input: Self::Input) -> Result<String, ToolError> {

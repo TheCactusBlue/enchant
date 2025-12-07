@@ -1,5 +1,6 @@
 use iocraft::prelude::*;
 
+use crate::agent::tools::tool::ToolPreview;
 use crate::components::COLOR_PRIMARY;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -11,7 +12,7 @@ pub enum PermissionChoice {
 #[derive(Default, Props)]
 pub struct PermissionPromptProps {
     pub description: String,
-    pub diff: Option<String>,
+    pub preview: Option<ToolPreview>,
     pub on_choice: HandlerMut<'static, PermissionChoice>,
 }
 
@@ -23,7 +24,7 @@ pub fn PermissionPrompt(
     let mut selected = hooks.use_state(|| 0usize); // 0 = Approve, 1 = Deny
     let mut on_choice = props.on_choice.take();
     let description = props.description.clone();
-    let diff = props.diff.clone();
+    let preview = props.preview.clone();
 
     let (w, _) = hooks.use_terminal_size();
 
@@ -82,24 +83,27 @@ pub fn PermissionPrompt(
         Color::DarkGrey
     };
 
-    // Parse diff lines and colorize them
-    let diff_lines: Vec<(String, Color)> = diff
-        .as_ref()
-        .map(|d| {
-            d.lines()
-                .map(|line| {
-                    let color = if line.starts_with('+') {
-                        Color::Green
-                    } else if line.starts_with('-') {
-                        Color::Red
-                    } else {
-                        Color::DarkGrey
-                    };
-                    (line.to_string(), color)
-                })
-                .collect()
-        })
-        .unwrap_or_default();
+    // Parse preview content into displayable lines
+    let preview_lines: Vec<(String, Color)> = match &preview {
+        Some(ToolPreview::Edit { diff }) => diff
+            .lines()
+            .map(|line| {
+                let color = if line.starts_with('+') {
+                    Color::Green
+                } else if line.starts_with('-') {
+                    Color::Red
+                } else {
+                    Color::DarkGrey
+                };
+                (line.to_string(), color)
+            })
+            .collect(),
+        Some(ToolPreview::Write { content }) => content
+            .lines()
+            .map(|line| (line.to_string(), Color::Green))
+            .collect(),
+        None => vec![],
+    };
 
     element! {
         View(
@@ -117,7 +121,7 @@ pub fn PermissionPrompt(
             View(margin_top: 1) {
                 Text(content: description)
             }
-            #(if !diff_lines.is_empty() {
+            #(if !preview_lines.is_empty() {
                 Some(element! {
                     View(
                         margin_top: 1,
@@ -126,7 +130,7 @@ pub fn PermissionPrompt(
                         border_color: Color::DarkGrey,
                         padding: 1,
                     ) {
-                        #(diff_lines.iter().map(|(line, color)| {
+                        #(preview_lines.iter().map(|(line, color)| {
                             element! {
                                 Text(content: line.clone(), color: *color)
                             }

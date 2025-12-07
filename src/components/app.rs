@@ -131,13 +131,13 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                     .map(|r| r.description.clone())
                     .collect::<Vec<_>>()
                     .join("\n");
-                // Collect all diffs (for now, just take the first one if available)
-                let diff = requests.iter().find_map(|r| r.diff.clone());
+                // Collect the first preview if available
+                let preview = requests.iter().find_map(|r| r.preview.clone());
                 let requests_clone = requests.clone();
                 element! {
                     PermissionPrompt(
                         description: description,
-                        diff: diff,
+                        preview: preview,
                         on_choice: move |choice| {
                             on_permission_choice(choice, requests_clone.clone());
                         },
