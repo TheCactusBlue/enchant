@@ -10,6 +10,7 @@ use crate::{
             bash::Bash,
             edit::Edit,
             glob::Glob,
+            grep::Grep,
             read::Read,
             tool::{PermissionRequest, Toolset},
             write::Write,
@@ -65,6 +66,7 @@ impl Session {
             tools: Arc::new(Toolset::new(vec![
                 Box::new(Read),
                 Box::new(Glob),
+                Box::new(Grep),
                 Box::new(Edit),
                 Box::new(Write),
                 Box::new(Bash),

@@ -1,1 +1,1 @@
-Uses grep to search through files.
+Search for a regex pattern in a file or directory (recursive).

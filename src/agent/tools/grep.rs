@@ -23,8 +23,7 @@ impl Tool for Grep {
     type Input = GrepInput;
 
     fn get_info() -> ToolInfo {
-        ToolInfo::new("Grep")
-            .with_description("Search for a regex pattern in a file or directory (recursive).")
+        ToolInfo::new("Grep").with_description(include_str!("./grep.md"))
     }
 
     async fn execute(input: Self::Input) -> Result<String, ToolError> {

@@ -15,7 +15,7 @@ impl Tool for Glob {
     type Input = GlobInput;
 
     fn get_info() -> ToolInfo {
-        ToolInfo::new("Glob").with_description("Match files using glob patterns. This tool is very fast and will works with even big codebases.")
+        ToolInfo::new("Glob").with_description(include_str!("./glob.md"))
     }
 
     async fn execute(input: Self::Input) -> Result<String, ToolError> {
