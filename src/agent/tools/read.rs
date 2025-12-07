@@ -1,7 +1,10 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError};
+use crate::{
+    agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError},
+    util::format_path,
+};
 
 pub struct Read;
 
@@ -12,6 +15,10 @@ pub struct ReadInput {
 
 impl Tool for Read {
     type Input = ReadInput;
+
+    fn describe_action(input: &Self::Input) -> String {
+        format!("Read({})", format_path(&input.path).display())
+    }
 
     fn get_info() -> ToolInfo {
         ToolInfo::new("Read").with_description(include_str!("./read.md"))

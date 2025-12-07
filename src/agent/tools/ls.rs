@@ -4,7 +4,10 @@ use std::path::Path;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError};
+use crate::{
+    agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError},
+    util::format_path,
+};
 
 pub struct Ls;
 
@@ -19,6 +22,10 @@ impl Tool for Ls {
 
     fn get_info() -> ToolInfo {
         ToolInfo::new("LS").with_description(include_str!("./ls.md"))
+    }
+
+    fn describe_action(input: &Self::Input) -> String {
+        format!("LS({})", format_path(&input.path).display())
     }
 
     async fn execute(input: Self::Input) -> Result<String, ToolError> {

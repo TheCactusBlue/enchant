@@ -14,6 +14,10 @@ pub struct GlobInput {
 impl Tool for Glob {
     type Input = GlobInput;
 
+    fn describe_action(input: &Self::Input) -> String {
+        format!("Glob({})", &input.pattern)
+    }
+
     fn get_info() -> ToolInfo {
         ToolInfo::new("Glob").with_description(include_str!("./glob.md"))
     }

@@ -7,7 +7,10 @@ use grep::searcher::sinks::UTF8;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError};
+use crate::{
+    agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError},
+    util::format_path,
+};
 
 pub struct Grep;
 
@@ -24,6 +27,14 @@ impl Tool for Grep {
 
     fn get_info() -> ToolInfo {
         ToolInfo::new("Grep").with_description(include_str!("./grep.md"))
+    }
+
+    fn describe_action(input: &Self::Input) -> String {
+        format!(
+            "Grep({}, pattern: {})",
+            format_path(&input.path).display(),
+            &input.pattern
+        )
     }
 
     async fn execute(input: Self::Input) -> Result<String, ToolError> {
