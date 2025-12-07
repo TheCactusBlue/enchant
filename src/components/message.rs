@@ -12,6 +12,7 @@ const COLOR_TOOL: Color = Color::Rgb {
 #[derive(Default, Props)]
 pub struct MessageProps {
     pub message: Option<ChatMessage>,
+    pub toolset: Option<std::sync::Arc<crate::agent::tools::tool::Toolset>>,
 }
 
 fn has_displayable_content(message: &ChatMessage) -> bool {
@@ -42,6 +43,7 @@ const MESSAGE_LINE: BorderStyle = BorderStyle::Custom(BorderCharacters {
 #[component]
 pub fn Message(mut hooks: Hooks, props: &MessageProps) -> impl Into<AnyElement<'static>> {
     let (w, _) = hooks.use_terminal_size();
+    let toolset = &props.toolset;
 
     element! {
         View() {
@@ -51,9 +53,11 @@ pub fn Message(mut hooks: Hooks, props: &MessageProps) -> impl Into<AnyElement<'
                 Some(element! {
                     View(flex_direction: FlexDirection::Column, max_width: w) {
                         #(tool_calls.iter().map(|tc| {
+                            let display = toolset.as_ref().and_then(|ts| ts.get_display_message(&tc.fn_name, &tc.fn_arguments))
+                                .unwrap_or_else(|| format!("{}({})", tc.fn_name, tc.fn_arguments));
                             element! {
                                 View(max_width: w, border_style: MESSAGE_LINE, padding_left: 1, border_color: COLOR_TOOL) {
-                                    Text(content: format!("{}({})", tc.fn_name, tc.fn_arguments), color: COLOR_TOOL, wrap: TextWrap::Wrap)
+                                    Text(content: display, color: COLOR_TOOL, wrap: TextWrap::Wrap)
                                 }
                             }
                         }).collect::<Vec<_>>())

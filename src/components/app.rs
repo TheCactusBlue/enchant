@@ -110,7 +110,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
         View(flex_direction: FlexDirection::Column) {
             #(session.read().messages.iter().map(|m| {
                 element! {
-                    Message (message: m.clone())
+                    Message (message: m.clone(), toolset: sess.tools.clone())
                 }
             }))
         }

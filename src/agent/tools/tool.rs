@@ -43,6 +43,13 @@ pub trait Tool {
     ) -> impl Future<Output = Option<ToolPreview>> + Send + Sync {
         async { None }
     }
+
+    /// Returns a concise display message for the tool call in chat history.
+    /// By default returns None, which uses the standard "Tool(json)" format.
+    /// Override to provide a custom, more concise display.
+    fn display_message(_input: &Self::Input) -> Option<String> {
+        None
+    }
 }
 
 pub struct ToolInfo {
@@ -86,6 +93,7 @@ pub trait WrappedTool {
     fn requires_permission(&self) -> bool;
     fn describe_action(&self, input: &Value) -> String;
     async fn generate_preview(&self, input: &Value) -> Option<ToolPreview>;
+    fn display_message(&self, input: &Value) -> Option<String>;
 }
 
 #[async_trait]
@@ -120,6 +128,13 @@ impl<T: Tool + Sync> WrappedTool for T {
     async fn generate_preview(&self, input: &Value) -> Option<ToolPreview> {
         match serde_json::from_value::<T::Input>(input.clone()) {
             Ok(typed_input) => T::generate_preview(&typed_input).await,
+            Err(_) => None,
+        }
+    }
+
+    fn display_message(&self, input: &Value) -> Option<String> {
+        match serde_json::from_value::<T::Input>(input.clone()) {
+            Ok(typed_input) => T::display_message(&typed_input),
             Err(_) => None,
         }
     }
@@ -162,5 +177,9 @@ impl Toolset {
 
     pub async fn generate_preview(&self, name: &str, input: &Value) -> Option<ToolPreview> {
         self.tools.get(name)?.generate_preview(input).await
+    }
+
+    pub fn get_display_message(&self, name: &str, input: &Value) -> Option<String> {
+        self.tools.get(name)?.display_message(input)
     }
 }

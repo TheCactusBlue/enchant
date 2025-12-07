@@ -1,10 +1,13 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::agent::tools::{
-    Tool,
-    tool::{ToolInfo, ToolPreview},
-    tool_error::ToolError,
+use crate::{
+    agent::tools::{
+        Tool,
+        tool::{ToolInfo, ToolPreview},
+        tool_error::ToolError,
+    },
+    util::format_path,
 };
 
 pub struct Edit;
@@ -29,6 +32,10 @@ impl Tool for Edit {
 
     fn describe_action(input: &Self::Input) -> String {
         format!("Edit file: {}", input.path)
+    }
+
+    fn display_message(input: &Self::Input) -> Option<String> {
+        Some(format!("Edit({})", format_path(&input.path).display()))
     }
 
     async fn generate_preview(input: &Self::Input) -> Option<ToolPreview> {

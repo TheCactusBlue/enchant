@@ -1,10 +1,13 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::agent::tools::{
-    Tool,
-    tool::{ToolInfo, ToolPreview},
-    tool_error::ToolError,
+use crate::{
+    agent::tools::{
+        Tool,
+        tool::{ToolInfo, ToolPreview},
+        tool_error::ToolError,
+    },
+    util::format_path,
 };
 
 pub struct Write;
@@ -26,6 +29,10 @@ impl Tool for Write {
 
     fn requires_permission() -> bool {
         true
+    }
+
+    fn display_message(input: &Self::Input) -> Option<String> {
+        Some(format!("Write({})", format_path(&input.path).display()))
     }
 
     fn describe_action(input: &Self::Input) -> String {
