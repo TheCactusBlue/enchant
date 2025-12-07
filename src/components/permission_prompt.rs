@@ -96,7 +96,10 @@ pub fn PermissionPrompt(
                         ChangeTag::Insert => ("+", Color::Green),
                         ChangeTag::Equal => (" ", Color::DarkGrey),
                     };
-                    (format!("{}{}", sign, change.to_string_lossy().trim_end()), color)
+                    (
+                        format!("{}{}", sign, change.to_string_lossy().trim_end()),
+                        color,
+                    )
                 })
                 .collect()
         }
@@ -113,7 +116,7 @@ pub fn PermissionPrompt(
             border_style: BorderStyle::Single,
             border_color: COLOR_PRIMARY,
             padding: 1,
-            min_width: w,
+            max_width: w,
         ) {
             Text(
                 content: "Permission Required",
