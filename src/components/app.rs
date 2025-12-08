@@ -1,7 +1,7 @@
 use iocraft::prelude::*;
 
 use crate::{
-    agent::{Session, ThinkResult, tools::tool::PermissionRequest},
+    agent::{Session, ThinkResult, config::load_config, tools::tool::PermissionRequest},
     components::{
         AnsiText, COLOR_PRIMARY, InputBox, PermissionChoice, PermissionPrompt, ThinkingIndicator,
         message::Message,
@@ -19,6 +19,16 @@ enum AppState {
 
 #[component]
 pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
+    hooks.use_future(async move {
+        load_config().await.unwrap();
+    });
+    element! {
+        Terminal
+    }
+}
+
+#[component]
+pub fn Terminal(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let mut input = hooks.use_state(|| "".to_string());
     let mut session = hooks.use_state(|| Session::new());
     let mut app_state = hooks.use_state(AppState::default);
