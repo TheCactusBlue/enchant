@@ -1,11 +1,11 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-pub fn format_path<P: Into<PathBuf>>(path: P) -> PathBuf {
-    let path: PathBuf = path.into();
+pub fn format_path(path: impl AsRef<Path>) -> PathBuf {
+    let path = path.as_ref();
     let working_dir = if let Ok(working_dir) = std::env::current_dir() {
         working_dir
     } else {
-        return path;
+        return path.to_path_buf();
     };
 
     if path.starts_with(&working_dir) {
@@ -14,5 +14,5 @@ pub fn format_path<P: Into<PathBuf>>(path: P) -> PathBuf {
             .unwrap_or(&path)
             .to_path_buf();
     }
-    return path;
+    return path.to_path_buf();
 }
