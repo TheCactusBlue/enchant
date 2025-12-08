@@ -1,7 +1,11 @@
 use iocraft::prelude::*;
 
 use crate::{
-    agent::{Session, ThinkResult, config::load_config, tools::tool::PermissionRequest},
+    agent::{
+        Session, ThinkResult,
+        config::{ConfigState, load_config},
+        tools::tool::PermissionRequest,
+    },
     components::{
         AnsiText, COLOR_PRIMARY, InputBox, PermissionChoice, PermissionPrompt, ThinkingIndicator,
         message::Message,
@@ -19,18 +23,38 @@ enum AppState {
 
 #[component]
 pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
-    hooks.use_future(async move {
-        load_config().await.unwrap();
+    let mut config = hooks.use_state(|| None::<ConfigState>);
+
+    hooks.use_future({
+        async move {
+            if let Ok(loaded_config) = load_config().await {
+                config.set(Some(loaded_config));
+            }
+        }
     });
+
     element! {
-        Terminal
+        View {
+            #(
+                if config.read().is_some() {
+                    Some(element! {Terminal(config: config.read().clone())})
+                } else {
+                    None
+                }
+            )
+        }
     }
 }
 
+#[derive(Default, Props)]
+pub struct TerminalProps {
+    pub config: Option<ConfigState>,
+}
+
 #[component]
-pub fn Terminal(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
+pub fn Terminal(mut hooks: Hooks, props: &TerminalProps) -> impl Into<AnyElement<'static>> {
     let mut input = hooks.use_state(|| "".to_string());
-    let mut session = hooks.use_state(|| Session::new());
+    let mut session = hooks.use_state(|| Session::new(&props.config.clone().unwrap()));
     let mut app_state = hooks.use_state(AppState::default);
 
     // Handler for continuing the think loop after permission is resolved

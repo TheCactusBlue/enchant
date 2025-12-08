@@ -13,7 +13,7 @@ use crate::error::Error;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     #[serde(skip_serializing_if = "Option::is_none")]
-    default_model: Option<String>,
+    pub default_model: Option<String>,
 }
 
 // ~/.enchant/api-keys.json

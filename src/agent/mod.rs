@@ -6,6 +6,7 @@ use std::{path::PathBuf, sync::Arc};
 
 use crate::{
     agent::{
+        config::ConfigState,
         prompt::build_system_prompt,
         tools::{
             bash::Bash,
@@ -60,9 +61,13 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn new() -> Self {
+    pub fn new(config: &ConfigState) -> Self {
         Self {
-            model: "claude-haiku-4-5".to_string(),
+            model: config
+                .base
+                .default_model
+                .clone()
+                .unwrap_or("claude-haiku-4-5".to_string()),
             working_directory: std::env::current_dir().unwrap(),
             messages: vec![ChatMessage::system(build_system_prompt())],
             tools: Arc::new(Toolset::new(vec![
