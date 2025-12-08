@@ -5,6 +5,7 @@ pub enum ToolError {
     IOError(std::io::Error),
     Error { message: String },
     ToolNotFound,
+    OutsideWorkingDirectory,
 }
 
 impl fmt::Display for ToolError {

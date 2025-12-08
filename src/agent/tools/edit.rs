@@ -7,7 +7,7 @@ use crate::{
         tool::{ToolInfo, ToolPreview},
         tool_error::ToolError,
     },
-    util::format_path,
+    util::{assert_working_directory, format_path},
 };
 
 pub struct Edit;
@@ -50,6 +50,8 @@ impl Tool for Edit {
     }
 
     async fn execute(input: Self::Input) -> Result<String, ToolError> {
+        assert_working_directory(&input.path)?;
+
         let old_file = tokio::fs::read_to_string(input.path.clone()).await?;
         let new_file = old_file.replacen(&input.old_string, &input.new_string, 1);
         tokio::fs::write(input.path, new_file.clone()).await?;

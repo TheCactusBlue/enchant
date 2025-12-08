@@ -6,7 +6,7 @@ use std::{path::PathBuf, sync::Arc};
 
 use crate::{
     agent::{
-        config::ConfigState,
+        config::{ConfigState, ProviderKey, ProviderKeys},
         prompt::build_system_prompt,
         tools::{
             bash::Bash,
@@ -23,6 +23,7 @@ use crate::{
 };
 use genai::{
     Client, ModelIden,
+    adapter::AdapterKind,
     chat::{ChatMessage, ChatRequest, ToolCall, ToolResponse},
     resolver::{AuthData, AuthResolver},
 };
@@ -58,6 +59,8 @@ pub struct Session {
     approved_calls: Vec<String>,
     /// Permission requests that have been denied (call_id -> denied).
     denied_calls: Vec<String>,
+
+    config: ConfigState,
 }
 
 impl Session {
@@ -82,6 +85,7 @@ impl Session {
             pending_calls: vec![],
             approved_calls: vec![],
             denied_calls: vec![],
+            config: config.clone(),
         }
     }
 
@@ -94,7 +98,7 @@ impl Session {
 
         // Otherwise, get a new response from the model
         let client = Client::builder()
-            .with_auth_resolver(auth_resolver())
+            .with_auth_resolver(auth_resolver(&self.config.api_keys))
             .build();
 
         let request = ChatRequest::new(self.messages.clone()).with_tools(self.tools.list_tools());
@@ -227,12 +231,20 @@ impl Session {
     }
 }
 
-pub fn auth_resolver() -> AuthResolver {
+pub fn auth_resolver(keys: &ProviderKeys) -> AuthResolver {
+    let keys = keys.clone();
     AuthResolver::from_resolver_fn(
-        |_model_iden: ModelIden| -> Result<Option<AuthData>, genai::resolver::Error> {
-            Ok(Some(AuthData::from_single(
-                std::env::var("ENCHANT_KEY").unwrap(),
-            )))
+        move |model_iden: ModelIden| -> Result<Option<AuthData>, genai::resolver::Error> {
+            match model_iden.adapter_kind {
+                AdapterKind::Anthropic => {
+                    if let ProviderKey::Anthropic { api_key } = keys.get("anthropic").unwrap() {
+                        Ok(Some(AuthData::from_single(api_key.clone())))
+                    } else {
+                        unimplemented!()
+                    }
+                }
+                _ => todo!(),
+            }
         },
     )
 }
