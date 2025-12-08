@@ -160,7 +160,7 @@ impl Toolset {
     }
 
     pub async fn call(&self, name: String, input: Value) -> Result<String, ToolError> {
-        let tool = self.tools.get(&name).unwrap();
+        let tool = self.tools.get(&name).ok_or(ToolError::ToolNotFound)?;
         Ok(tool.call(input).await?)
     }
 

@@ -4,6 +4,7 @@ use std::fmt;
 pub enum ToolError {
     IOError(std::io::Error),
     Error { message: String },
+    ToolNotFound,
 }
 
 impl fmt::Display for ToolError {
