@@ -23,7 +23,7 @@ unicode-width = "0.2.2"
 genai = "0.4.4"
 
 # CLI
-clap = "4.5.53"
+clap = { version = "4.5.53", features = ["derive"] }
 dotenvy = { version = "0.15.7" }
 
 # Tool implementations
