@@ -59,6 +59,8 @@ pub struct Session {
     approved_calls: Vec<String>,
     /// Permission requests that have been denied (call_id -> denied).
     denied_calls: Vec<String>,
+    /// Total tokens used in the current conversation.
+    pub total_tokens: Option<i32>,
 
     config: ConfigState,
 }
@@ -85,6 +87,7 @@ impl Session {
             pending_calls: vec![],
             approved_calls: vec![],
             denied_calls: vec![],
+            total_tokens: None,
             config: config.clone(),
         }
     }
@@ -104,6 +107,11 @@ impl Session {
         let request = ChatRequest::new(self.messages.clone()).with_tools(self.tools.list_tools());
 
         let response = client.exec_chat(&self.model, request, None).await?;
+
+        // Update total tokens from response usage
+        if let Some(total) = response.usage.total_tokens {
+            self.total_tokens = Some(total);
+        }
 
         // Get tool calls - need to clone since we use them twice
         let tool_calls = response.tool_calls();

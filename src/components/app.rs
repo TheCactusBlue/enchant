@@ -192,7 +192,7 @@ pub fn Terminal(mut hooks: Hooks, props: &TerminalProps) -> impl Into<AnyElement
             }
         })
         
-        StatusLine()
+        StatusLine(session: session.read().clone())
       }
     }
 }
