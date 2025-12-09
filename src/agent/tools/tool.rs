@@ -31,7 +31,6 @@ pub trait Tool {
     }
 
     /// Returns a human-readable description of the action for permission prompts.
-    /// Only called when requires_permission() returns true.
     fn describe_action(input: &Self::Input) -> String {
         format!(
             "{}({})",
