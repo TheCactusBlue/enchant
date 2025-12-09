@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Permission {
     // Always allow, don't ask the user for a permission
     Implicit,
@@ -10,4 +10,12 @@ pub enum Permission {
     RequireApproval,
     // Always reject, even in yolo  mode
     Never,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+
+pub enum PermissionMode {
+    Manual,
+    Automatic,
+    Yolo, // Cannot be shift+tabbed to toggle; must use the --yolo flag
 }
