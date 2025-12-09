@@ -7,7 +7,7 @@ use crate::{
         tools::tool::PermissionRequest,
     },
     components::{
-        AnsiText, COLOR_PRIMARY, InputBox, PermissionChoice, PermissionPrompt, ThinkingIndicator,
+        AnsiText, COLOR_PRIMARY, InputBox, PermissionChoice, PermissionPrompt, StatusLine, ThinkingIndicator,
         message::Message,
     },
 };
@@ -191,6 +191,8 @@ pub fn Terminal(mut hooks: Hooks, props: &TerminalProps) -> impl Into<AnyElement
                 }.into_any()
             }
         })
+        
+        StatusLine()
       }
     }
 }
