@@ -28,7 +28,7 @@ impl Tool for Write {
     }
 
     fn requires_permission() -> bool {
-        true
+        false
     }
 
     fn describe_action(input: &Self::Input) -> String {

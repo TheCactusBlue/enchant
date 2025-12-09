@@ -27,7 +27,7 @@ impl Tool for Edit {
     }
 
     fn requires_permission() -> bool {
-        true
+        false
     }
 
     fn describe_action(input: &Self::Input) -> String {
