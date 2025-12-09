@@ -69,12 +69,22 @@ fn search_path(
 
         for entry in entries.filter_map(|e| e.ok()) {
             let entry_path = entry.path();
-            // Skip hidden files/directories
-            if entry_path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .is_some_and(|n| n.starts_with('.'))
-            {
+            // Skip hidden files/directories and common large directories
+            // TODO: load from gitignore
+            if let Some(name) = entry_path.file_name().and_then(|n| n.to_str()) {
+                if name.starts_with('.')
+                    || name == "target"
+                    || name == "node_modules"
+                    || name == "vendor"
+                    || name == "dist"
+                    || name == "build"
+                    || name == ".git"
+                {
+                    continue;
+                }
+            }
+            // Skip symlinks to prevent cycles
+            if entry_path.is_symlink() {
                 continue;
             }
             search_path(matcher, searcher, &entry_path, matches)?;
