@@ -4,11 +4,12 @@ use crate::{
     agent::{
         Session, ThinkResult,
         config::{ConfigState, load_config},
+        models::model_info::get_model_info,
         tools::tool::PermissionRequest,
     },
     components::{
-        AnsiText, COLOR_PRIMARY, InputBox, PermissionChoice, PermissionPrompt, StatusLine, ThinkingIndicator,
-        message::Message,
+        AnsiText, COLOR_PRIMARY, InputBox, PermissionChoice, PermissionPrompt, StatusLine,
+        ThinkingIndicator, message::Message,
     },
 };
 
@@ -132,12 +133,15 @@ pub fn Terminal(mut hooks: Hooks, props: &TerminalProps) -> impl Into<AnyElement
     // Get current state for rendering
     let current_state = (*app_state.read()).clone();
     let sess = session.read();
+
+    let model_info = get_model_info(&sess.model);
+
     element! {
       View (flex_direction: FlexDirection::Column) {
         View(flex_direction: FlexDirection::Column, align_items: AlignItems::Center, gap: 1) {
             AnsiText(content: include_str!("../../prompts/char.ansi"))
             Text(content: format!("Enchant CLI · {} · {}",
-            sess.model,
+            model_info.name.unwrap_or(sess.model.clone()),
             sess.working_directory.display()
         ), color: COLOR_PRIMARY, weight: Weight::Bold)
         }
@@ -191,7 +195,7 @@ pub fn Terminal(mut hooks: Hooks, props: &TerminalProps) -> impl Into<AnyElement
                 }.into_any()
             }
         })
-        
+
         StatusLine(session: session.read().clone())
       }
     }

@@ -1,0 +1,14 @@
+{
+  "claude-haiku-4-5": {
+    "name": "Claude Haiku 4.5",
+    "max_context": 200000
+  },
+  "claude-sonnet-4-5": {
+    "name": "Claude Sonnet 4.5",
+    "max_context": 200000
+  },
+  "claude-opus-4-5": {
+    "name": "Claude Opus 4.5",
+    "max_context": 200000
+  }
+}
