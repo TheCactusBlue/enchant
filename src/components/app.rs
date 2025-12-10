@@ -143,11 +143,11 @@ pub fn Terminal(mut hooks: Hooks, props: &TerminalProps) -> impl Into<AnyElement
             MixedText(align: TextAlign::Center, contents: vec![
                 MixedTextContent::new("Enchant CLI").color(COLOR_PRIMARY).weight(Weight::Bold),
                 MixedTextContent::new(" · ").weight(Weight::Bold),
-                MixedTextContent::new(&model_info.name.unwrap_or(sess.model.clone()))
-                    .color(COLOR_PRIMARY).weight(Weight::Bold),
+                MixedTextContent::new(&model_info.name.clone().unwrap_or(sess.model.clone()))
+                    .color(model_info.get_color()).weight(Weight::Bold),
                 MixedTextContent::new(" · ").weight(Weight::Bold),
                 MixedTextContent::new(sess.working_directory.display())
-                    .color(COLOR_PRIMARY).weight(Weight::Bold),
+                    .color(Color::Grey).weight(Weight::Bold),
             ])
         }
         View(flex_direction: FlexDirection::Column) {
