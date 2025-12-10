@@ -6,7 +6,7 @@ use schemars::{JsonSchema, schema_for};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
 
-use crate::agent::tools::tool_error::ToolError;
+use crate::agent::tools::{permission::Permission, tool_error::ToolError};
 
 /// Preview content for permission prompts
 #[derive(Clone, Debug)]
@@ -24,10 +24,10 @@ pub trait Tool {
     fn execute(input: Self::Input)
     -> impl Future<Output = Result<String, ToolError>> + Send + Sync;
 
-    /// Returns true if this tool requires user permission before execution.
-    /// Default is false for backwards compatibility.
-    fn requires_permission() -> bool {
-        false
+    /// Returns the permission requirement for this tool.
+    /// Default is Implicit (no permission needed) for backwards compatibility.
+    fn requires_permission() -> Permission {
+        Permission::Implicit
     }
 
     /// Returns a human-readable description of the action for permission prompts.
@@ -86,7 +86,7 @@ pub struct PermissionRequest {
 pub trait WrappedTool {
     async fn call(&self, input: Value) -> Result<String, ToolError>;
     fn to_tool(&self) -> AITool;
-    fn requires_permission(&self) -> bool;
+    fn requires_permission(&self) -> Permission;
     fn describe_action(&self, input: &Value) -> String;
     async fn generate_preview(&self, input: &Value) -> Option<ToolPreview>;
 }
@@ -109,7 +109,7 @@ impl<T: Tool + Sync> WrappedTool for T {
         Ok(T::execute(value).await?)
     }
 
-    fn requires_permission(&self) -> bool {
+    fn requires_permission(&self) -> Permission {
         T::requires_permission()
     }
 
@@ -144,11 +144,11 @@ impl Toolset {
         self.order.clone()
     }
 
-    pub fn requires_permission(&self, name: &str) -> bool {
+    pub fn requires_permission(&self, name: &str) -> Permission {
         self.tools
             .get(name)
             .map(|t| t.requires_permission())
-            .unwrap_or(false)
+            .unwrap_or(Permission::Implicit)
     }
 
     pub fn describe_action(&self, name: &str, input: &Value) -> String {

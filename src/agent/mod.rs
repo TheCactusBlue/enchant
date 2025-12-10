@@ -15,6 +15,7 @@ use crate::{
             grep::Grep,
             ls::Ls,
             read::Read,
+            permission::Permission,
             tool::{PermissionRequest, Toolset},
             write::Write,
         },
@@ -32,7 +33,7 @@ use genai::{
 #[derive(Clone)]
 pub struct PendingToolCall {
     pub call: ToolCall,
-    pub needs_permission: bool,
+    pub permission_requirement: Permission,
 }
 
 /// The result of a single step of thinking.
@@ -126,7 +127,7 @@ impl Session {
         self.pending_calls = tool_calls
             .iter()
             .map(|call| PendingToolCall {
-                needs_permission: self.tools.requires_permission(&call.fn_name),
+                permission_requirement: self.tools.requires_permission(&call.fn_name),
                 call: (*call).clone(),
             })
             .collect();
@@ -145,7 +146,13 @@ impl Session {
         // Check if any calls need permission and haven't been approved/denied yet
         let mut permission_requests = vec![];
         for pending in &self.pending_calls {
-            if pending.needs_permission
+            let needs_permission = match pending.permission_requirement {
+                Permission::RequireApproval => true,
+                Permission::AllowAutomatic => true,
+                Permission::Implicit | Permission::Never => false,
+            };
+
+            if needs_permission
                 && !self.approved_calls.contains(&pending.call.call_id)
                 && !self.denied_calls.contains(&pending.call.call_id)
             {
@@ -227,7 +234,12 @@ impl Session {
     /// Check if there are pending permission requests.
     pub fn has_pending_permissions(&self) -> bool {
         self.pending_calls.iter().any(|p| {
-            p.needs_permission
+            let needs_permission = match p.permission_requirement {
+                Permission::RequireApproval => true,
+                Permission::AllowAutomatic => true,
+                Permission::Implicit | Permission::Never => false,
+            };
+            needs_permission
                 && !self.approved_calls.contains(&p.call.call_id)
                 && !self.denied_calls.contains(&p.call.call_id)
         })

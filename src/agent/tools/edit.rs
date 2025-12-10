@@ -5,6 +5,7 @@ use crate::{
     agent::tools::{
         Tool,
         tool::{ToolInfo, ToolPreview},
+        permission::Permission,
         tool_error::ToolError,
     },
     util::{assert_working_directory, format_path},
@@ -26,8 +27,8 @@ impl Tool for Edit {
         ToolInfo::new("Edit").with_description(include_str!("./edit.md"))
     }
 
-    fn requires_permission() -> bool {
-        false
+    fn requires_permission() -> Permission {
+        Permission::Implicit
     }
 
     fn describe_action(input: &Self::Input) -> String {

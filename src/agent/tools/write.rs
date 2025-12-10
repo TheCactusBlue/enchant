@@ -5,6 +5,7 @@ use crate::{
     agent::tools::{
         Tool,
         tool::{ToolInfo, ToolPreview},
+        permission::Permission,
         tool_error::ToolError,
     },
     util::format_path,
@@ -27,8 +28,8 @@ impl Tool for Write {
         ToolInfo::new("Write").with_description(include_str!("./write.md"))
     }
 
-    fn requires_permission() -> bool {
-        false
+    fn requires_permission() -> Permission {
+        Permission::Implicit
     }
 
     fn describe_action(input: &Self::Input) -> String {

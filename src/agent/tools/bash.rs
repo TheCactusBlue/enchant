@@ -2,7 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tokio::process::Command;
 
-use crate::agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError};
+use crate::agent::tools::{Tool, tool::ToolInfo, permission::Permission, tool_error::ToolError};
 
 pub struct Bash;
 
@@ -19,8 +19,8 @@ impl Tool for Bash {
         ToolInfo::new("Bash").with_description(include_str!("./bash.md"))
     }
 
-    fn requires_permission() -> bool {
-        true
+    fn requires_permission() -> Permission {
+        Permission::RequireApproval
     }
 
     fn describe_action(input: &Self::Input) -> String {
