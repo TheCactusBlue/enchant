@@ -14,8 +14,8 @@ use crate::{
             glob::Glob,
             grep::Grep,
             ls::Ls,
-            read::Read,
             permission::Permission,
+            read::Read,
             tool::{PermissionRequest, Toolset},
             write::Write,
         },
@@ -68,14 +68,24 @@ pub struct Session {
 
 impl Session {
     pub fn new(config: &ConfigState) -> Self {
+        let working_directory = std::env::current_dir().unwrap();
+        let mut messages = vec![ChatMessage::system(build_system_prompt())];
+
+        // Try to include ENCHANT.md as an initial message if it exists
+        if let Some(enchant_md) = futures::executor::block_on(async {
+            crate::agent::prompt::read_enchant_md(&working_directory).await
+        }) {
+            messages.push(ChatMessage::system(enchant_md));
+        }
+
         Self {
             model: config
                 .base
                 .default_model
                 .clone()
                 .unwrap_or("claude-haiku-4-5".to_string()),
-            working_directory: std::env::current_dir().unwrap(),
-            messages: vec![ChatMessage::system(build_system_prompt())],
+            working_directory,
+            messages,
             tools: Arc::new(Toolset::new(vec![
                 Box::new(Read),
                 Box::new(Glob),
