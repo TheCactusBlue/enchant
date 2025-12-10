@@ -35,3 +35,5 @@ similar = "2.7.0"
 
 # Sandboxing
 docker-api = "0.14.0"
+deno_core = "0.372.0"
+brush-parser = "0.3.0"

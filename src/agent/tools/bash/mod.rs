@@ -2,7 +2,9 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tokio::process::Command;
 
-use crate::agent::tools::{Tool, tool::ToolInfo, permission::Permission, tool_error::ToolError};
+use crate::agent::tools::{Tool, permission::Permission, tool::ToolInfo, tool_error::ToolError};
+
+pub mod parse;
 
 pub struct Bash;
 
