@@ -140,10 +140,14 @@ pub fn Terminal(mut hooks: Hooks, props: &TerminalProps) -> impl Into<AnyElement
       View (flex_direction: FlexDirection::Column) {
         View(flex_direction: FlexDirection::Column, align_items: AlignItems::Center, gap: 1) {
             AnsiText(content: include_str!("../../prompts/char.ansi"))
-            Text(content: format!("Enchant CLI · {} · {}",
-            model_info.name.unwrap_or(sess.model.clone()),
-            sess.working_directory.display()
-        ), color: COLOR_PRIMARY, weight: Weight::Bold)
+            MixedText(align: TextAlign::Center, contents: vec![
+                MixedTextContent::new("Enchant CLI").color(COLOR_PRIMARY),
+                MixedTextContent::new(" · "),
+                MixedTextContent::new(&model_info.name.unwrap_or(sess.model.clone())).color(COLOR_PRIMARY),
+                MixedTextContent::new(" · "),
+                MixedTextContent::new(sess.working_directory.display()).color(COLOR_PRIMARY),
+
+            ])
         }
         View(flex_direction: FlexDirection::Column) {
             #(session.read().messages.iter().map(|m| {
