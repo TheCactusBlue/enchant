@@ -14,3 +14,8 @@ pub fn build_system_prompt() -> String {
 
     handlebars.render_template(template, &data).unwrap()
 }
+
+pub async fn read_enchant_md() -> Option<String> {
+    // attempt to read ENCHANT.md, AGENT.md, and CLAUDE.md
+    todo!()
+}
