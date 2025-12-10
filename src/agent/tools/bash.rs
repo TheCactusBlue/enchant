@@ -8,6 +8,7 @@ pub struct Bash;
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 pub struct BashInput {
+    /// Bash command to run.
     pub command: String,
 }
 
@@ -23,7 +24,7 @@ impl Tool for Bash {
     }
 
     fn describe_action(input: &Self::Input) -> String {
-        format!("Run Command: {}", input.command)
+        format!("Bash({})", input.command)
     }
 
     async fn execute(input: Self::Input) -> Result<String, ToolError> {
