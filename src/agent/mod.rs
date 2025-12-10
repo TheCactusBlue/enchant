@@ -68,13 +68,17 @@ pub struct Session {
 
 impl Session {
     pub fn new(config: &ConfigState) -> Self {
+        futures::executor::block_on(async { Self::new_async(config).await })
+    }
+
+    /// Async version of `new` that properly awaits ENCHANT.md loading.
+    /// Prefer this over `new()` in async contexts to avoid blocking the runtime.
+    pub async fn new_async(config: &ConfigState) -> Self {
         let working_directory = std::env::current_dir().unwrap();
         let mut messages = vec![ChatMessage::system(build_system_prompt())];
 
         // Try to include ENCHANT.md as an initial message if it exists
-        if let Some(enchant_md) = futures::executor::block_on(async {
-            crate::agent::prompt::read_enchant_md(&working_directory).await
-        }) {
+        if let Some(enchant_md) = crate::agent::prompt::read_enchant_md(&working_directory).await {
             messages.push(ChatMessage::system(enchant_md));
         }
 
@@ -142,10 +146,8 @@ impl Session {
             })
             .collect();
 
-        // Add the tool calls to the message history now
-        let tool_calls_for_history = response.into_tool_calls();
-        self.messages
-            .push(ChatMessage::from(tool_calls_for_history));
+        // Add the assistant response (including both text and tool calls) to history
+        self.messages.push(ChatMessage::assistant(response.content));
 
         // Process the pending calls
         self.process_pending_calls().await
