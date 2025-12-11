@@ -1,11 +1,10 @@
 use std::path::{Path, PathBuf};
 
-use ignore::WalkBuilder;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError},
+    agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError, walk_builder::walk_builder},
     util::format_path,
 };
 
@@ -35,14 +34,7 @@ impl Tool for Glob {
 
         let root = glob_root(&input.pattern);
 
-        let mut builder = WalkBuilder::new(&root);
-        builder
-            .follow_links(false)
-            .hidden(true)
-            .git_ignore(true)
-            .git_global(true)
-            .git_exclude(true)
-            .ignore(true);
+        let builder = walk_builder(&root);
 
         let mut out = Vec::new();
         for entry in builder.build() {

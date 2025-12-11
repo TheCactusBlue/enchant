@@ -3,12 +3,11 @@ use std::path::Path;
 use grep::regex::RegexMatcher;
 use grep::searcher::Searcher;
 use grep::searcher::sinks::UTF8;
-use ignore::WalkBuilder;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError},
+    agent::tools::{Tool, tool::ToolInfo, tool_error::ToolError, walk_builder::walk_builder},
     util::format_path,
 };
 
@@ -62,19 +61,7 @@ fn search_path(
     path: &Path,
     matches: &mut Vec<String>,
 ) -> Result<(), ToolError> {
-    // WalkBuilder respects:
-    // - .gitignore and .git/info/exclude
-    // - global gitignore (core.excludesFile) when available
-    // - .ignore files
-    // and it skips hidden files by default.
-    let mut builder = WalkBuilder::new(path);
-    builder
-        .follow_links(false)
-        .hidden(true)
-        .git_ignore(true)
-        .git_global(true)
-        .git_exclude(true)
-        .ignore(true);
+    let builder = walk_builder(path);
 
     for entry in builder.build() {
         let entry = entry.map_err(|e| ToolError::Error {
