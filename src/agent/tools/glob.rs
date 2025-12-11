@@ -1,5 +1,6 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
+use ignore::WalkBuilder;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -28,40 +29,65 @@ impl Tool for Glob {
     }
 
     async fn execute(input: Self::Input) -> Result<String, ToolError> {
-        // TODO: Port glob to use async
-        let v: Vec<_> = glob::glob(&input.pattern)
-            .map_err(|x| ToolError::Error {
-                message: x.msg.to_string(),
-            })?
-            .filter_map(|x| x.ok())
-            .filter(|path| should_include_path(path))
-            .map(|x| x.display().to_string())
-            .collect();
-        Ok(v.join("\n"))
+        let pattern = glob::Pattern::new(&input.pattern).map_err(|e| ToolError::Error {
+            message: e.msg.to_string(),
+        })?;
+
+        let root = glob_root(&input.pattern);
+
+        let mut builder = WalkBuilder::new(&root);
+        builder
+            .follow_links(false)
+            .hidden(true)
+            .git_ignore(true)
+            .git_global(true)
+            .git_exclude(true)
+            .ignore(true);
+
+        let mut out = Vec::new();
+        for entry in builder.build() {
+            let entry = match entry {
+                Ok(e) => e,
+                Err(_) => continue,
+            };
+
+            if !entry.file_type().is_some_and(|t| t.is_file()) {
+                continue;
+            }
+
+            let p = entry.path();
+            if pattern.matches_path(p) {
+                out.push(p.display().to_string());
+            }
+        }
+
+        Ok(out.join("\n"))
     }
 }
 
-fn should_include_path(path: &Path) -> bool {
-    // Skip symlinks to prevent cycles
-    if path.is_symlink() {
-        return false;
-    }
+/// Best-effort extraction of a filesystem root to walk from a glob pattern.
+/// This is intentionally simple: it walks from the pattern's leading path
+/// components until it hits a glob metachar.
+fn glob_root(pattern: &str) -> PathBuf {
+    let p = Path::new(pattern);
+    let mut root = PathBuf::new();
 
-    // Skip hidden files/directories and common large directories
-    for component in path.components() {
-        if let Some(name) = component.as_os_str().to_str() {
-            if name.starts_with('.')
-                || name == "target"
-                || name == "node_modules"
-                || name == "vendor"
-                || name == "dist"
-                || name == "build"
-                || name == ".git"
-            {
-                return false;
-            }
+    for comp in p.components() {
+        let s = comp.as_os_str().to_string_lossy();
+        // Glob metacharacters. We stop before the first one.
+        if s.contains('*') || s.contains('?') || s.contains('[') || s.contains('{') {
+            break;
         }
+        root.push(comp);
     }
 
-    true
+    if root.as_os_str().is_empty() {
+        // Fallback: at least keep the parent directory if possible.
+        if let Some(parent) = p.parent() {
+            return parent.to_path_buf();
+        }
+        return PathBuf::from("/");
+    }
+
+    root
 }
