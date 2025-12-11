@@ -22,10 +22,10 @@ impl ModelInfo {
                 g: 124,
                 b: 94,
             },
-            name if name.starts_with("GPT-") || name.starts_with("OpenAI") => Color::Rgb {
-                r: 46,
-                g: 255,
-                b: 137,
+            name if name.starts_with("GPT") || name.starts_with("OpenAI") => Color::Rgb {
+                r: 78,
+                g: 212,
+                b: 121,
             },
             _ => Color::White,
         }
