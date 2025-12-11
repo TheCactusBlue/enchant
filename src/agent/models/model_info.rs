@@ -6,7 +6,7 @@ use serde::Deserialize;
 #[derive(Clone, Debug, Deserialize, Default)]
 pub struct ModelInfo {
     pub name: Option<String>,
-    pub max_context: Option<u64>,
+    pub max_context: Option<i32>,
 }
 
 impl ModelInfo {
