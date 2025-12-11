@@ -31,6 +31,6 @@ pub struct Pipeline {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SimpleCommand {
-    /// argv[0] is the program name.
-    pub argv: Vec<String>,
+    pub program: String,
+    pub args: Vec<String>,
 }
