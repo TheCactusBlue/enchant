@@ -1,9 +1,9 @@
-use std::fs;
 use std::path::Path;
 
 use grep::regex::RegexMatcher;
 use grep::searcher::Searcher;
 use grep::searcher::sinks::UTF8;
+use ignore::WalkBuilder;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -62,43 +62,47 @@ fn search_path(
     path: &Path,
     matches: &mut Vec<String>,
 ) -> Result<(), ToolError> {
-    if path.is_dir() {
-        let entries = fs::read_dir(path).map_err(|e| ToolError::Error {
+    // WalkBuilder respects:
+    // - .gitignore and .git/info/exclude
+    // - global gitignore (core.excludesFile) when available
+    // - .ignore files
+    // and it skips hidden files by default.
+    let mut builder = WalkBuilder::new(path);
+    builder
+        .follow_links(false)
+        .hidden(true)
+        .git_ignore(true)
+        .git_global(true)
+        .git_exclude(true)
+        .ignore(true);
+
+    for entry in builder.build() {
+        let entry = entry.map_err(|e| ToolError::Error {
             message: e.to_string(),
         })?;
 
-        for entry in entries.filter_map(|e| e.ok()) {
-            let entry_path = entry.path();
-            // Skip hidden files/directories and common large directories
-            // TODO: load from gitignore
-            if let Some(name) = entry_path.file_name().and_then(|n| n.to_str()) {
-                if name.starts_with('.')
-                    || name == "target"
-                    || name == "node_modules"
-                    || name == "vendor"
-                    || name == "dist"
-                    || name == "build"
-                    || name == ".git"
-                {
-                    continue;
-                }
-            }
-            // Skip symlinks to prevent cycles
-            if entry_path.is_symlink() {
-                continue;
-            }
-            search_path(matcher, searcher, &entry_path, matches)?;
+        if !entry.file_type().is_some_and(|t| t.is_file()) {
+            continue;
         }
-    } else if path.is_file() {
-        let file_path = path.display().to_string();
+
+        let file_path = entry.path();
+        let file_path_display = file_path.display().to_string();
+
+        // If a file can't be searched (e.g. permission denied), just skip it.
         let _ = searcher.search_path(
             matcher,
-            path,
+            file_path,
             UTF8(|line_num, line| {
-                matches.push(format!("{}:{}  {}", file_path, line_num, line.trim_end()));
+                matches.push(format!(
+                    "{}:{}  {}",
+                    file_path_display,
+                    line_num,
+                    line.trim_end()
+                ));
                 Ok(true)
             }),
         );
     }
+
     Ok(())
 }
