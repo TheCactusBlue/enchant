@@ -4,6 +4,7 @@ use tokio::process::Command;
 
 use crate::agent::tools::{Tool, permission::Permission, tool::ToolInfo, tool_error::ToolError};
 
+pub mod bashtree;
 pub mod parse;
 
 pub struct Bash;

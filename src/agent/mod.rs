@@ -269,6 +269,13 @@ pub fn auth_resolver(keys: &ProviderKeys) -> AuthResolver {
     AuthResolver::from_resolver_fn(
         move |model_iden: ModelIden| -> Result<Option<AuthData>, genai::resolver::Error> {
             match model_iden.adapter_kind {
+                AdapterKind::OpenAI => {
+                    if let ProviderKey::OpenAI { api_key } = keys.get("openai").unwrap() {
+                        Ok(Some(AuthData::from_single(api_key.clone())))
+                    } else {
+                        unimplemented!()
+                    }
+                }
                 AdapterKind::Anthropic => {
                     if let ProviderKey::Anthropic { api_key } = keys.get("anthropic").unwrap() {
                         Ok(Some(AuthData::from_single(api_key.clone())))
