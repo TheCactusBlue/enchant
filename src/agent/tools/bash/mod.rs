@@ -26,11 +26,12 @@ impl Tool for Bash {
     }
 
     fn requires_permission(input: &Self::Input) -> Result<Permission, ToolError> {
-        if parse_bash_expr(&input.command)?.is_safe() {
-            Ok(Permission::Implicit)
+        let perm = if parse_bash_expr(&input.command)?.is_safe() {
+            Permission::Implicit
         } else {
-            Ok(Permission::RequireApproval)
-        }
+            Permission::RequireApproval
+        };
+        Ok(perm)
     }
 
     fn describe_action(input: &Self::Input) -> String {
