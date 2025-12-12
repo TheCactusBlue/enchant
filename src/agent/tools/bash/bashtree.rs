@@ -64,9 +64,26 @@ impl Command {
 
     pub fn is_allowed(&self, cfg: &BashConfig) -> bool {
         cfg.allow.iter().any(|rule| {
-            let mut args: Vec<&str> = rule.split(" ").collect();
+            let mut args: Vec<String> = rule.split(" ").map(|x| x.to_string()).collect();
             let program = args.remove(0);
-            program == &self.program
+            if program != self.program {
+                return false;
+            }
+
+            let wildcard = args.last().map(|x| x.as_str()) == Some("*");
+            if wildcard {
+                args.pop();
+            }
+
+            for (i, arg_rule) in args.iter().enumerate() {
+                if Some(arg_rule) != self.args.get(i) {
+                    return false;
+                }
+            }
+            if !wildcard {
+                return args.len() == self.args.len();
+            }
+            return true;
         })
     }
 }
