@@ -12,6 +12,8 @@
 //! Not supported: subshells, compound commands, redirects, heredocs, async `&`,
 //! `!`, `time`, process substitution, arithmetic, etc.
 
+use crate::util::enchant_config::BashConfig;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Expression {
     // the vec of commands are pipelines
@@ -41,12 +43,12 @@ impl Expression {
     }
 
     /// Returns true if **every** command in the expression is present in the allowlist.
-    pub fn is_allowed(&self, allow: &[String]) -> bool {
-        self.first.iter().all(|cmd| cmd.is_allowed(allow))
+    pub fn is_allowed(&self, cfg: &BashConfig) -> bool {
+        self.first.iter().all(|cmd| cmd.is_allowed(cfg))
             && self
                 .rest
                 .iter()
-                .all(|(_, pipeline)| pipeline.iter().all(|cmd| cmd.is_allowed(allow)))
+                .all(|(_, pipeline)| pipeline.iter().all(|cmd| cmd.is_allowed(cfg)))
     }
 }
 
@@ -60,7 +62,7 @@ impl Command {
         }
     }
 
-    pub fn is_allowed(&self, allow: &[String]) -> bool {
-        allow.iter().any(|p| p == &self.program)
+    pub fn is_allowed(&self, cfg: &BashConfig) -> bool {
+        cfg.allow.iter().any(|p| p == &self.program)
     }
 }
