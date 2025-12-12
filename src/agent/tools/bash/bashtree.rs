@@ -31,13 +31,23 @@ pub struct Command {
     pub args: Vec<String>,
 }
 
+impl Expression {
+    pub fn is_safe(&self) -> bool {
+        self.first.iter().all(|cmd| cmd.is_safe())
+            && self
+                .rest
+                .iter()
+                .all(|(_, pipeline)| pipeline.iter().all(|cmd| cmd.is_safe()))
+    }
+}
+
 impl Command {
-    pub fn is_safe(&self) {
+    pub fn is_safe(&self) -> bool {
         match self.program.as_str() {
             "cat" | "cd" | "echo" | "false" | "grep" | "head" | "ls" | "nl" | "pwd" | "tail"
             | "true" | "wc" | "which" => true,
             "cargo" if self.args.get(0).map(String::as_str) == Some("check") => true,
             _ => false,
-        };
+        }
     }
 }
