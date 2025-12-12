@@ -26,12 +26,7 @@ impl Tool for Bash {
     }
 
     fn requires_permission(input: &Self::Input) -> Result<Permission, ToolError> {
-        let expr = if let Some(expr) = parse_bash_expr(&input.command).ok() {
-            expr
-        } else {
-            return Ok(Permission::RequireApproval);
-        };
-        if expr.is_safe() {
+        if parse_bash_expr(&input.command)?.is_safe() {
             Ok(Permission::Implicit)
         } else {
             Ok(Permission::RequireApproval)
