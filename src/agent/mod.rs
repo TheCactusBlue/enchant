@@ -156,7 +156,7 @@ impl Session {
             .map(|call| PendingToolCall {
                 permission_requirement: self
                     .tools
-                    .requires_permission(&call.fn_name, &call.fn_arguments)
+                    .requires_permission(self, &call.fn_name, &call.fn_arguments)
                     .unwrap_or(Permission::RequireApproval),
                 call: (*call).clone(),
             })

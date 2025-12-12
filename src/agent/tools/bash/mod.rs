@@ -25,7 +25,7 @@ impl Tool for Bash {
         ToolInfo::new("Bash").with_description(include_str!("./bash.md"))
     }
 
-    fn requires_permission(input: &Self::Input) -> Result<Permission, ToolError> {
+    fn requires_permission(_session: &crate::agent::Session, input: &Self::Input) -> Result<Permission, ToolError> {
         let perm = if parse_bash_expr(&input.command)?.is_safe() {
             Permission::Implicit
         } else {

@@ -28,7 +28,7 @@ impl Tool for Write {
         ToolInfo::new("Write").with_description(include_str!("./write.md"))
     }
 
-    fn requires_permission(_input: &Self::Input) -> Result<Permission, ToolError> {
+    fn requires_permission(_session: &crate::agent::Session, _input: &Self::Input) -> Result<Permission, ToolError> {
         Ok(Permission::Implicit)
     }
 

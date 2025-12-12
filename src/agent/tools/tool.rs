@@ -6,7 +6,7 @@ use schemars::{JsonSchema, schema_for};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
 
-use crate::agent::tools::{permission::Permission, tool_error::ToolError};
+use crate::agent::{Session, tools::{permission::Permission, tool_error::ToolError}};
 
 /// Preview content for permission prompts
 #[derive(Clone, Debug)]
@@ -27,7 +27,10 @@ pub trait Tool {
     /// Returns the permission requirement for this tool, given the input.
     ///
     /// Default is Implicit (no permission needed) for backwards compatibility.
-    fn requires_permission(_input: &Self::Input) -> Result<Permission, ToolError> {
+    fn requires_permission(
+        _session: &Session,
+        _input: &Self::Input,
+    ) -> Result<Permission, ToolError> {
         Ok(Permission::Implicit)
     }
 
@@ -87,7 +90,7 @@ pub struct PermissionRequest {
 pub trait WrappedTool {
     async fn call(&self, input: Value) -> Result<String, ToolError>;
     fn to_tool(&self) -> AITool;
-    fn requires_permission(&self, input: &Value) -> Result<Permission, ToolError>;
+    fn requires_permission(&self, session: &Session, input: &Value) -> Result<Permission, ToolError>;
     fn describe_action(&self, input: &Value) -> String;
     async fn generate_preview(&self, input: &Value) -> Option<ToolPreview>;
 }
@@ -110,9 +113,9 @@ impl<T: Tool + Sync> WrappedTool for T {
         Ok(T::execute(value).await?)
     }
 
-    fn requires_permission(&self, input: &Value) -> Result<Permission, ToolError> {
+    fn requires_permission(&self, session: &Session, input: &Value) -> Result<Permission, ToolError> {
         match serde_json::from_value::<T::Input>(input.clone()) {
-            Ok(typed_input) => T::requires_permission(&typed_input),
+            Ok(typed_input) => T::requires_permission(session, &typed_input),
             Err(e) => Err(ToolError::Error {
                 message: format!("Invalid tool input: {}", e),
             }),
@@ -150,9 +153,14 @@ impl Toolset {
         self.order.clone()
     }
 
-    pub fn requires_permission(&self, name: &str, input: &Value) -> Result<Permission, ToolError> {
+    pub fn requires_permission(
+        &self,
+        session: &Session,
+        name: &str,
+        input: &Value,
+    ) -> Result<Permission, ToolError> {
         let tool = self.tools.get(name).ok_or(ToolError::ToolNotFound)?;
-        tool.requires_permission(input)
+        tool.requires_permission(session, input)
     }
 
     pub fn describe_action(&self, name: &str, input: &Value) -> String {
