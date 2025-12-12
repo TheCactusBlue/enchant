@@ -14,8 +14,8 @@
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Expression {
-    pub first: Pipeline,
-    pub rest: Vec<(AndOr, Pipeline)>,
+    pub first: Vec<Command>,
+    pub rest: Vec<(AndOr, Vec<Command>)>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -25,12 +25,18 @@ pub enum AndOr {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Pipeline {
-    pub commands: Vec<SimpleCommand>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SimpleCommand {
+pub struct Command {
     pub program: String,
     pub args: Vec<String>,
+}
+
+impl Command {
+    pub fn is_safe(&self) {
+        match self.program.as_str() {
+            "cat" | "cd" | "echo" | "false" | "grep" | "head" | "ls" | "nl" | "pwd" | "tail"
+            | "true" | "wc" | "which" => true,
+            "cargo" if self.args.get(0).map(String::as_str) == Some("check") => true,
+            _ => false,
+        };
+    }
 }
