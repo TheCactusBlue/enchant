@@ -14,6 +14,7 @@
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Expression {
+    // the vec of commands are pipelines
     pub first: Vec<Command>,
     pub rest: Vec<(AndOr, Vec<Command>)>,
 }

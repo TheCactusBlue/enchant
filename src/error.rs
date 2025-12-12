@@ -8,7 +8,6 @@ pub enum Error {
     ToolError(ToolError),
     IOError(io::Error),
     SerdeError(String),
-    BashError(String),
 }
 
 impl From<genai::Error> for Error {

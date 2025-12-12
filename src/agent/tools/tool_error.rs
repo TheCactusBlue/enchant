@@ -6,6 +6,7 @@ pub enum ToolError {
     Error { message: String },
     ToolNotFound,
     OutsideWorkingDirectory,
+    BashError(String),
 }
 
 impl fmt::Display for ToolError {

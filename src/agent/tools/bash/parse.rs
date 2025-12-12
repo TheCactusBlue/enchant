@@ -3,11 +3,17 @@ use brush_parser::{
     ast::{AndOr, Command, CompoundListItem, Pipeline, Program, SeparatorOperator},
 };
 
-use crate::error::Error;
+use crate::{
+    agent::tools::{
+        bash::bashtree::{self, Expression},
+        tool_error::ToolError,
+    },
+    error::Error,
+};
 
-pub fn parse_ast(input: &str) -> Result<Program, Error> {
+pub fn parse_ast(input: &str) -> Result<Program, ToolError> {
     let tokens =
-        brush_parser::tokenize_str(input).map_err(|err| Error::BashError(err.to_string()))?;
+        brush_parser::tokenize_str(input).map_err(|err| ToolError::BashError(err.to_string()))?;
     let ast = brush_parser::parse_tokens(
         &tokens,
         &ParserOptions::default(),
@@ -15,66 +21,85 @@ pub fn parse_ast(input: &str) -> Result<Program, Error> {
             source: "<Bash Evaluator>".to_string(),
         },
     )
-    .map_err(|err| Error::BashError(err.to_string()))?;
+    .map_err(|err| ToolError::BashError(err.to_string()))?;
     Ok(ast)
 }
 
-pub fn parse_statement(input: &str) -> Result<Vec<CompoundListItem>, Error> {
-    let l = parse_ast(input)?
-        .complete_commands
+pub fn parse_statements(input: &str) -> Result<Vec<CompoundListItem>, ToolError> {
+    let command_list = parse_ast(input)?.complete_commands;
+
+    if command_list.len() != 1 {
+        return Err(ToolError::BashError(
+            "Only bash operators that are permitted are &&, ||, |".to_string(),
+        ));
+    }
+
+    let statements = command_list
         .into_iter()
         .nth(0)
         .ok_or_else(|| {
-            Error::BashError("Only bash operators that are permitted are &&, ||, |".to_string())
+            ToolError::BashError("Only bash operators that are permitted are &&, ||, |".to_string())
         })?
         .0;
-    Ok(l)
+    Ok(statements)
 }
 
-pub fn parse_pipeline(pipeline: &Pipeline) -> Result<(), Error> {
+pub fn parse_statement(input: &str) -> Result<CompoundListItem, ToolError> {
+    let statements = parse_statements(input)?;
+    if statements.len() != 1 {
+        return Err(ToolError::BashError(
+            "Only bash operators that are permitted are &&, ||, |".to_string(),
+        ));
+    }
+    let statement = statements.into_iter().nth(0).ok_or_else(|| {
+        ToolError::BashError("Only bash operators that are permitted are &&, ||, |".to_string())
+    })?;
+    if matches!(statement.1, SeparatorOperator::Async) {
+        return Err(ToolError::BashError(
+            "Async execution of bash commands are unsupported".to_string(),
+        ));
+    }
+    Ok(statement)
+}
+
+pub fn parse_pipeline(pipeline: &Pipeline) -> Result<Vec<bashtree::Command>, ToolError> {
     if pipeline.timed.is_some() || pipeline.bang {
-        return Err(Error::BashError(
+        return Err(ToolError::BashError(
             "Negation or timed operators are unsupported".to_string(),
         ));
     }
     let pipeline = &pipeline.seq;
-    let _res: Vec<_> = pipeline.iter().map(parse_command).collect();
-    Ok(())
+    pipeline.iter().map(parse_command).collect()
 }
 
-pub fn parse_command(command: &Command) -> Result<(), Error> {
+pub fn parse_command(command: &Command) -> Result<bashtree::Command, ToolError> {
     let command = if let Command::Simple(command) = command {
         command
     } else {
-        return Err(Error::BashError(
+        return Err(ToolError::BashError(
             "Complex commands are not supported".to_string(),
         ));
     };
     dbg!(command);
-    Ok(())
+    Ok(bashtree::Command {
+        program: command.word_or_name.clone().unwrap().value,
+        args: command.suffix.iter().map(|x| x.to_string()).collect(),
+    })
 }
 
-pub fn parse_bash_command(input: &str) -> Result<(), Error> {
-    let statements = parse_statement(input)?;
-    for statement in statements {
-        match statement.1 {
-            SeparatorOperator::Async => {
-                return Err(Error::BashError(
-                    "Async execution of bash commands are unsupported".to_string(),
-                ));
-            }
-            _ => {}
-        }
-        let statement = statement.0;
-        parse_pipeline(&statement.first)?;
-        for pipeline in &statement.additional {
-            let pipe = match pipeline {
-                AndOr::And(pipeline) => parse_pipeline(pipeline),
-                AndOr::Or(pipeline) => parse_pipeline(pipeline),
-            }?;
-        }
+pub fn parse_bash_expr(input: &str) -> Result<bashtree::Expression, ToolError> {
+    let statement = parse_statement(input)?.0;
+
+    let first = parse_pipeline(&statement.first)?;
+    let mut rest = vec![];
+    for x in statement.additional {
+        rest.push(match x {
+            AndOr::And(pipeline) => (bashtree::AndOr::And, parse_pipeline(&pipeline)?),
+            AndOr::Or(pipeline) => (bashtree::AndOr::Or, parse_pipeline(&pipeline)?),
+        });
     }
-    Ok(())
+
+    Ok(bashtree::Expression { first, rest })
 }
 
 #[cfg(test)]
@@ -83,6 +108,6 @@ mod tests {
 
     #[test]
     fn test_parsing_2() {
-        parse_bash_command("ls && pwd; echo 'hi there' | wc -l").unwrap()
+        parse_bash_expr("ls && pwd || echo 'hi there' | wc -l").unwrap();
     }
 }
