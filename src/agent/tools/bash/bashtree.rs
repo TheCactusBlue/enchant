@@ -63,6 +63,10 @@ impl Command {
     }
 
     pub fn is_allowed(&self, cfg: &BashConfig) -> bool {
-        cfg.allow.iter().any(|p| p == &self.program)
+        cfg.allow.iter().any(|rule| {
+            let mut args: Vec<&str> = rule.split(" ").collect();
+            let program = args.remove(0);
+            program == &self.program
+        })
     }
 }
