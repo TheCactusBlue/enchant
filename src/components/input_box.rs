@@ -1,7 +1,7 @@
 use iocraft::prelude::*;
 
-use crate::components::enhanced_input::EnhancedInput;
 use crate::components::COLOR_PRIMARY;
+use crate::components::enhanced_input::EnhancedInput;
 
 #[derive(Default, Props)]
 pub struct InputBoxProps {

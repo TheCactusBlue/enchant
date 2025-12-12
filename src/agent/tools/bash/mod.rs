@@ -25,16 +25,16 @@ impl Tool for Bash {
         ToolInfo::new("Bash").with_description(include_str!("./bash.md"))
     }
 
-    fn requires_permission(input: &Self::Input) -> Permission {
+    fn requires_permission(input: &Self::Input) -> Result<Permission, ToolError> {
         let expr = if let Some(expr) = parse_bash_expr(&input.command).ok() {
             expr
         } else {
-            return Permission::RequireApproval;
+            return Ok(Permission::RequireApproval);
         };
         if expr.is_safe() {
-            Permission::Implicit
+            Ok(Permission::Implicit)
         } else {
-            Permission::RequireApproval
+            Ok(Permission::RequireApproval)
         }
     }
 

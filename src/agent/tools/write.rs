@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     agent::tools::{
         Tool,
-        tool::{ToolInfo, ToolPreview},
         permission::Permission,
+        tool::{ToolInfo, ToolPreview},
         tool_error::ToolError,
     },
     util::format_path,
@@ -28,8 +28,8 @@ impl Tool for Write {
         ToolInfo::new("Write").with_description(include_str!("./write.md"))
     }
 
-    fn requires_permission(_input: &Self::Input) -> Permission {
-        Permission::Implicit
+    fn requires_permission(_input: &Self::Input) -> Result<Permission, ToolError> {
+        Ok(Permission::Implicit)
     }
 
     fn describe_action(input: &Self::Input) -> String {
