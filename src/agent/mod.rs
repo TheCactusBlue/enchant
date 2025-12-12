@@ -5,6 +5,8 @@ pub mod tools;
 
 use std::{path::PathBuf, sync::Arc};
 
+use tokio::fs;
+
 use crate::{
     agent::{
         config::{ConfigState, ProviderKey, ProviderKeys},
@@ -22,6 +24,7 @@ use crate::{
         },
     },
     error::Error,
+    util::enchant_config::EnchantJson,
 };
 use genai::{
     Client, ModelIden,
@@ -52,6 +55,7 @@ pub enum ThinkResult {
 pub struct Session {
     pub model: String,
     pub working_directory: PathBuf,
+    pub enchant_json: EnchantJson,
 
     pub messages: Vec<ChatMessage>,
     pub tools: Arc<Toolset>,
@@ -83,6 +87,13 @@ impl Session {
             messages.push(ChatMessage::system(enchant_md));
         }
 
+        // Load optional per-project enchant.json from working directory
+        // (falls back to defaults if missing or unreadable)
+        let enchant_json: EnchantJson = match fs::read_to_string(working_directory.join("enchant.json")).await {
+            Ok(content) => serde_json::from_str(&content).unwrap_or_default(),
+            Err(_) => EnchantJson::default(),
+        };
+
         Self {
             model: config
                 .base
@@ -90,6 +101,7 @@ impl Session {
                 .clone()
                 .unwrap_or("claude-haiku-4-5".to_string()),
             working_directory,
+            enchant_json,
             messages,
             tools: Arc::new(Toolset::new(vec![
                 Box::new(Read),
