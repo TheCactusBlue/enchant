@@ -23,10 +23,7 @@ fn should_ignore_message(message: &ChatMessage) -> bool {
     if !has_displayable_content(message) {
         return true;
     }
-    match message.role {
-        ChatRole::System => true,
-        _ => false,
-    }
+    matches!(message.role, ChatRole::System)
 }
 
 const MESSAGE_LINE: BorderStyle = BorderStyle::Custom(BorderCharacters {

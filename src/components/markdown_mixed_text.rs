@@ -46,12 +46,6 @@ fn render_markdown_to_mixed_text_contents(input: &str) -> Vec<MixedTextContent> 
     };
 
     render_node(&mdast, &mut out, StyleState::default());
-
-    // Avoid extra bottom spacing in message bubbles.
-    while matches!(out.last(), Some(c) if c.text == "\n" || c.text == "\n\n") {
-        out.pop();
-    }
-
     out
 }
 
