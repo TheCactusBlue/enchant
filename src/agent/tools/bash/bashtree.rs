@@ -57,7 +57,6 @@ impl Command {
         match self.program.as_str() {
             "cat" | "cd" | "echo" | "false" | "grep" | "head" | "ls" | "nl" | "pwd" | "tail"
             | "true" | "wc" | "which" => true,
-            "cargo" if self.args.get(0).map(String::as_str) == Some("check") => true,
             _ => false,
         }
     }
