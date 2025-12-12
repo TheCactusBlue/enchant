@@ -27,7 +27,7 @@ impl Tool for Edit {
         ToolInfo::new("Edit").with_description(include_str!("./edit.md"))
     }
 
-    fn requires_permission() -> Permission {
+    fn requires_permission(_input: &Self::Input) -> Permission {
         Permission::Implicit
     }
 

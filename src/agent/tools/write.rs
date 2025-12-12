@@ -28,7 +28,7 @@ impl Tool for Write {
         ToolInfo::new("Write").with_description(include_str!("./write.md"))
     }
 
-    fn requires_permission() -> Permission {
+    fn requires_permission(_input: &Self::Input) -> Permission {
         Permission::Implicit
     }
 

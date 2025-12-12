@@ -142,7 +142,9 @@ impl Session {
         self.pending_calls = tool_calls
             .iter()
             .map(|call| PendingToolCall {
-                permission_requirement: self.tools.requires_permission(&call.fn_name),
+                permission_requirement: self
+                    .tools
+                    .requires_permission(&call.fn_name, &call.fn_arguments),
                 call: (*call).clone(),
             })
             .collect();

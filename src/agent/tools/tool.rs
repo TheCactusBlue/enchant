@@ -24,9 +24,10 @@ pub trait Tool {
     fn execute(input: Self::Input)
     -> impl Future<Output = Result<String, ToolError>> + Send + Sync;
 
-    /// Returns the permission requirement for this tool.
+    /// Returns the permission requirement for this tool, given the input.
+    ///
     /// Default is Implicit (no permission needed) for backwards compatibility.
-    fn requires_permission() -> Permission {
+    fn requires_permission(_input: &Self::Input) -> Permission {
         Permission::Implicit
     }
 
@@ -86,7 +87,7 @@ pub struct PermissionRequest {
 pub trait WrappedTool {
     async fn call(&self, input: Value) -> Result<String, ToolError>;
     fn to_tool(&self) -> AITool;
-    fn requires_permission(&self) -> Permission;
+    fn requires_permission(&self, input: &Value) -> Permission;
     fn describe_action(&self, input: &Value) -> String;
     async fn generate_preview(&self, input: &Value) -> Option<ToolPreview>;
 }
@@ -109,8 +110,11 @@ impl<T: Tool + Sync> WrappedTool for T {
         Ok(T::execute(value).await?)
     }
 
-    fn requires_permission(&self) -> Permission {
-        T::requires_permission()
+    fn requires_permission(&self, input: &Value) -> Permission {
+        match serde_json::from_value::<T::Input>(input.clone()) {
+            Ok(typed_input) => T::requires_permission(&typed_input),
+            Err(_) => Permission::Implicit,
+        }
     }
 
     fn describe_action(&self, input: &Value) -> String {
@@ -144,10 +148,10 @@ impl Toolset {
         self.order.clone()
     }
 
-    pub fn requires_permission(&self, name: &str) -> Permission {
+    pub fn requires_permission(&self, name: &str, input: &Value) -> Permission {
         self.tools
             .get(name)
-            .map(|t| t.requires_permission())
+            .map(|t| t.requires_permission(input))
             .unwrap_or(Permission::Implicit)
     }
 

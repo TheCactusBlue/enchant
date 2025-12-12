@@ -2,7 +2,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tokio::process::Command;
 
-use crate::agent::tools::{Tool, permission::Permission, tool::ToolInfo, tool_error::ToolError};
+use crate::agent::tools::{
+    Tool, bash::parse::parse_bash_expr, permission::Permission, tool::ToolInfo,
+    tool_error::ToolError,
+};
 
 pub mod bashtree;
 pub mod parse;
@@ -22,8 +25,17 @@ impl Tool for Bash {
         ToolInfo::new("Bash").with_description(include_str!("./bash.md"))
     }
 
-    fn requires_permission() -> Permission {
-        Permission::RequireApproval
+    fn requires_permission(input: &Self::Input) -> Permission {
+        let expr = if let Some(expr) = parse_bash_expr(&input.command).ok() {
+            expr
+        } else {
+            return Permission::RequireApproval;
+        };
+        if expr.is_safe() {
+            Permission::Implicit
+        } else {
+            Permission::RequireApproval
+        }
     }
 
     fn describe_action(input: &Self::Input) -> String {
