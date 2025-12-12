@@ -54,8 +54,8 @@ impl Command {
     }
 
     pub fn is_allowed(&self, cfg: &BashConfig) -> bool {
-        if !self.is_safe() {
-            return false;
+        if self.is_safe() {
+            return true;
         }
         cfg.allow.iter().any(|rule| {
             let mut args: Vec<String> = rule.split(" ").map(|x| x.to_string()).collect();
