@@ -39,6 +39,15 @@ impl Expression {
                 .iter()
                 .all(|(_, pipeline)| pipeline.iter().all(|cmd| cmd.is_safe()))
     }
+
+    /// Returns true if **every** command in the expression is present in the allowlist.
+    pub fn is_allowed(&self, allow: &[String]) -> bool {
+        self.first.iter().all(|cmd| cmd.is_allowed(allow))
+            && self
+                .rest
+                .iter()
+                .all(|(_, pipeline)| pipeline.iter().all(|cmd| cmd.is_allowed(allow)))
+    }
 }
 
 impl Command {
@@ -49,5 +58,9 @@ impl Command {
             "cargo" if self.args.get(0).map(String::as_str) == Some("check") => true,
             _ => false,
         }
+    }
+
+    pub fn is_allowed(&self, allow: &[String]) -> bool {
+        allow.iter().any(|p| p == &self.program)
     }
 }
