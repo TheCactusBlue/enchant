@@ -10,10 +10,22 @@ use tokio::fs;
 use crate::error::Error;
 
 // ~/.enchant/config.json
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default_model: Option<String>,
+
+    pub permissions: Permissions,
+}
+
+#[derive(Default, Clone, Debug, Serialize, Deserialize)]
+pub struct Permissions {
+    pub bash: BashConfig,
+}
+
+#[derive(Default, Clone, Debug, Serialize, Deserialize)]
+pub struct BashConfig {
+    pub allow: Vec<String>,
 }
 
 // ~/.enchant/api-keys.json
@@ -26,14 +38,6 @@ pub enum ProviderKey {
     OpenAI { api_key: String },
     #[serde(rename = "anthropic")]
     Anthropic { api_key: String },
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            default_model: Default::default(),
-        }
-    }
 }
 
 pub async fn check_directory(path: impl AsRef<Path>) -> Result<PathBuf, Error> {

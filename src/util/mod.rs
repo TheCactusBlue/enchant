@@ -2,8 +2,6 @@ use std::path::{Path, PathBuf};
 
 use crate::agent::tools::tool_error::ToolError;
 
-pub mod enchant_config;
-
 pub fn format_path(path: impl AsRef<Path>) -> PathBuf {
     let path = path.as_ref();
     let working_dir = if let Ok(working_dir) = std::env::current_dir() {

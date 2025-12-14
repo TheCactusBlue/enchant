@@ -31,7 +31,7 @@ impl Tool for Bash {
     ) -> Result<Permission, ToolError> {
         let expr = parse_bash_expr(&input.command)?;
 
-        let perm = if expr.is_allowed(&session.enchant_json.permissions.bash) {
+        let perm = if expr.is_allowed(&session.config.base.permissions.bash) {
             Permission::Implicit
         } else {
             Permission::RequireApproval

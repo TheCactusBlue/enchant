@@ -12,7 +12,7 @@
 //! Not supported: subshells, compound commands, redirects, heredocs, async `&`,
 //! `!`, `time`, process substitution, arithmetic, etc.
 
-use crate::util::enchant_config::BashConfig;
+use crate::agent::config::BashConfig;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Expression {
