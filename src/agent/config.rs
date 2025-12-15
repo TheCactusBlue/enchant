@@ -18,9 +18,28 @@ pub struct Config {
     pub permissions: Permissions,
 }
 
+impl Config {
+    pub fn merge(self, overlay: Self) -> Self {
+        return Self {
+            default_model: overlay.default_model.or(self.default_model),
+            permissions: overlay.permissions.merge(self.permissions),
+        };
+    }
+}
+
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct Permissions {
     pub bash: BashConfig,
+}
+
+impl Permissions {
+    pub fn merge(mut self, overlay: Self) -> Self {
+        let mut allowlist = overlay.bash.allow;
+        allowlist.append(&mut self.bash.allow);
+        return Self {
+            bash: BashConfig { allow: allowlist },
+        };
+    }
 }
 
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
