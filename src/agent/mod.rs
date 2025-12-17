@@ -9,7 +9,7 @@ use tokio::fs;
 
 use crate::{
     agent::{
-        config::{ConfigState, ProviderKey, ProviderKeys},
+        config::{Config, ConfigState, ProviderKey, ProviderKeys},
         prompt::build_system_prompt,
         tools::{
             bash::Bash,
@@ -66,17 +66,18 @@ pub struct Session {
     /// Total tokens used in the current conversation.
     pub total_tokens: Option<i32>,
 
-    config: ConfigState,
+    config: Config,
+    api_keys: ProviderKeys,
 }
 
 impl Session {
-    pub fn new(config: &ConfigState) -> Self {
-        futures::executor::block_on(async { Self::new_async(config).await })
+    pub fn new(config_state: &ConfigState) -> Self {
+        futures::executor::block_on(async { Self::new_async(config_state).await })
     }
 
     /// Async version of `new` that properly awaits ENCHANT.md loading.
     /// Prefer this over `new()` in async contexts to avoid blocking the runtime.
-    pub async fn new_async(config: &ConfigState) -> Self {
+    pub async fn new_async(config_state: &ConfigState) -> Self {
         let working_directory = std::env::current_dir().unwrap();
         let mut messages = vec![ChatMessage::system(build_system_prompt())];
 
@@ -87,15 +88,15 @@ impl Session {
 
         // // Load optional per-project enchant.json from working directory
         // // (falls back to defaults if missing or unreadable)
-        // let enchant_json: EnchantJson =
-        //     match fs::read_to_string(working_directory.join("enchant.json")).await {
-        //         Ok(content) => serde_json::from_str(&content).unwrap_or_default(),
-        //         Err(_) => EnchantJson::default(),
-        //     };
+        let config: Config = match fs::read_to_string(working_directory.join("enchant.json")).await
+        {
+            Ok(content) => serde_json::from_str(&content).unwrap_or_default(),
+            Err(_) => Config::default(),
+        };
+        let config = config_state.base.clone().merge(config);
 
         Self {
             model: config
-                .base
                 .default_model
                 .clone()
                 .unwrap_or("claude-haiku-4-5".to_string()),
@@ -115,6 +116,7 @@ impl Session {
             denied_calls: vec![],
             total_tokens: None,
             config: config.clone(),
+            api_keys: config_state.api_keys.clone(),
         }
     }
 
@@ -127,7 +129,7 @@ impl Session {
 
         // Otherwise, get a new response from the model
         let client = Client::builder()
-            .with_auth_resolver(auth_resolver(&self.config.api_keys))
+            .with_auth_resolver(auth_resolver(&self.api_keys))
             .build();
 
         let request = ChatRequest::new(self.messages.clone()).with_tools(self.tools.list_tools());

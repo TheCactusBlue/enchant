@@ -3,12 +3,9 @@ use brush_parser::{
     ast::{AndOr, Command, CompoundListItem, Pipeline, Program, SeparatorOperator},
 };
 
-use crate::{
-    agent::tools::{
-        bash::bashtree::{self, Expression},
-        tool_error::ToolError,
-    },
-    error::Error,
+use crate::agent::tools::{
+    bash::bashtree::{self},
+    tool_error::ToolError,
 };
 
 pub fn parse_ast(input: &str) -> Result<Program, ToolError> {

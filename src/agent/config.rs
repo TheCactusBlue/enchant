@@ -96,7 +96,8 @@ pub struct ConfigState {
 pub async fn load_config() -> Result<ConfigState, Error> {
     let enchant_dir = check_directory(env::home_dir().unwrap().join(".enchant")).await?;
 
-    let base: Config = check_json(enchant_dir.clone().join("enchant.json")).await?;
+    let base: Config = check_json(enchant_dir.clone().join("enchant.json")).await?; // ~/.enchant/.enchant.json
+
     let api_keys: ProviderKeys = check_json(enchant_dir.clone().join("api-keys.json")).await?;
 
     Ok(ConfigState { base, api_keys })
