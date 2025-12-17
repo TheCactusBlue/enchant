@@ -80,7 +80,6 @@ pub fn parse_command(command: &Command) -> Result<bashtree::Command, ToolError> 
             "Complex commands are not supported".to_string(),
         ));
     };
-    dbg!(command);
     Ok(bashtree::Command {
         program: command.word_or_name.clone().unwrap().value,
         args: command.suffix.iter().map(|x| x.to_string()).collect(),
