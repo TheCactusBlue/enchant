@@ -28,8 +28,11 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
 
     hooks.use_future({
         async move {
-            if let Ok(loaded_config) = load_config().await {
-                config.set(Some(loaded_config));
+            match load_config().await {
+                Ok(loaded_config) => {
+                    config.set(Some(loaded_config));
+                }
+                Err(err) => panic!("{:?}", err),
             }
         }
     });

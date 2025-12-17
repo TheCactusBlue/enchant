@@ -15,6 +15,7 @@ pub struct Config {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default_model: Option<String>,
 
+    #[serde(default)]
     pub permissions: Permissions,
 }
 
