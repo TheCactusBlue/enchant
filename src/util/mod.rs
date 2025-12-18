@@ -21,7 +21,7 @@ pub fn format_path(path: impl AsRef<Path>) -> PathBuf {
 
 pub fn assert_working_directory(path: impl AsRef<Path>) -> Result<(), ToolError> {
     let working_dir = std::env::current_dir()?;
-    if path.as_ref().starts_with(working_dir) {
+    if !path.as_ref().starts_with(&working_dir) {
         return Err(ToolError::OutsideWorkingDirectory);
     }
     Ok(())
