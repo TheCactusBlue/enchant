@@ -15,14 +15,21 @@ pub struct Config {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default_model: Option<String>,
 
+    /// Optional MCP stdio servers to load tools from.
+    #[serde(default)]
+    pub mcp_servers: Vec<crate::agent::mcp::McpServerConfig>,
+
     #[serde(default)]
     pub permissions: Permissions,
 }
 
 impl Config {
     pub fn merge(self, overlay: Self) -> Self {
+        let mut mcp_servers = overlay.mcp_servers;
+        mcp_servers.extend(self.mcp_servers);
         return Self {
             default_model: overlay.default_model.or(self.default_model),
+            mcp_servers,
             permissions: overlay.permissions.merge(self.permissions),
         };
     }

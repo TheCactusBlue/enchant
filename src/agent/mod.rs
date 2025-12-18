@@ -1,4 +1,5 @@
 pub mod config;
+pub mod mcp;
 pub mod models;
 pub mod prompt;
 pub mod tools;
@@ -95,6 +96,29 @@ impl Session {
         };
         let config = config_state.base.clone().merge(config);
 
+        // Build tool list (built-ins + optional MCP)
+        let mut tools: Vec<Box<dyn crate::agent::tools::tool::WrappedTool + Send + Sync + 'static>> = vec![
+            Box::new(Read),
+            Box::new(Glob),
+            Box::new(Grep),
+            Box::new(Ls),
+            Box::new(Edit),
+            Box::new(Write),
+            Box::new(Bash),
+        ];
+
+        if !config.mcp_servers.is_empty() {
+            match crate::agent::mcp::load::load_mcp_tools(&config.mcp_servers).await {
+                Ok(mut mcp_tools) => tools.append(&mut mcp_tools),
+                Err(e) => {
+                    // Non-fatal: keep app usable even if MCP tools fail.
+                    messages.push(ChatMessage::system(format!(
+                        "Warning: failed to load MCP tools: {e}"
+                    )));
+                }
+            }
+        }
+
         Self {
             model: config
                 .default_model
@@ -102,15 +126,7 @@ impl Session {
                 .unwrap_or("claude-haiku-4-5".to_string()),
             working_directory,
             messages,
-            tools: Arc::new(Toolset::new(vec![
-                Box::new(Read),
-                Box::new(Glob),
-                Box::new(Grep),
-                Box::new(Ls),
-                Box::new(Edit),
-                Box::new(Write),
-                Box::new(Bash),
-            ])),
+            tools: Arc::new(Toolset::new(tools)),
             pending_calls: vec![],
             approved_calls: vec![],
             denied_calls: vec![],
